@@ -22,9 +22,6 @@ class GFRazorpay extends GFPaymentAddOn {
 	protected $_capabilities_form_settings = 'gravityforms_razorpay';
 	protected $_capabilities_uninstall = 'gravityforms_razorpay_uninstall';
 
-	// Automatic upgrade enabled
-	protected $_enable_rg_autoupgrade = true;
-
 	private static $_instance = null;
 
 	public static function get_instance() {
@@ -72,15 +69,15 @@ class GFRazorpay extends GFPaymentAddOn {
 		);
 	}
 
-	public function get_customer_fields_array( $feed, $entry )
+	public function get_customer_fields_array($feed, $entry)
 	{
 		$fields = array();
 
-		foreach ( $this->get_customer_fields() as $field )
+		foreach ($this->get_customer_fields() as $field)
 		{
 			$field_id = $feed['meta'][ $field['meta_name'] ];
 
-			$value    = rgar( $entry, $field_id );
+			$value = rgar( $entry, $field_id );
 
 			$fields[$field['meta_name']] = $value;
 		}
@@ -202,7 +199,9 @@ EOT;
         	{
             	$error .= $e->getMessage();
         	}
-        } else {
+        }
+        else
+        {
         	$error = 'Payment Failed';
         }
 
@@ -227,13 +226,13 @@ EOT;
 
     }
 
-    public function post_callback( $callback_action, $callback_result ) {
-		$entry               = GFAPI::get_entry( $callback_action['entry_id'] );
-		$feed                = $this->get_payment_feed( $entry );
-		$transaction_id      = rgar( $callback_action, 'transaction_id' );
-		$amount              = rgar( $callback_action, 'amount' );
+    public function post_callback($callback_action, $callback_result) {
+		$entry               = GFAPI::get_entry($callback_action['entry_id']);
+		$feed                = $this->get_payment_feed($entry);
+		$transaction_id      = rgar($callback_action, 'transaction_id');
+		$amount              = rgar($callback_action, 'amount');
 
-		do_action( 'gform_razorpay_post_payment_' . $callback_action['type'],  $_POST, $entry, $feed);
+		do_action('gform_razorpay_post_payment_' . $callback_action['type'],  $_POST, $entry, $feed);
     }
 
 	public function generate_razorpay_form($entry, $customer_fields, $form){
@@ -244,7 +243,6 @@ EOT;
             'name'        => $form['name'],
             'amount'      => (int) round($entry['payment_amount']*100),
             'currency'    => $entry['currency'],
-            'currency'    => 'INR',
             'description' => $form['description'],
             'prefill'     => array(
             	'name'      => $customer_fields['billingInformation_firstName'],
@@ -275,7 +273,7 @@ EOT;
 		return true;
 	}
 
-	public function pay_using_razorpay( $entry, $form )
+	public function pay_using_razorpay($entry, $form)
 	{
 		$feed = $this->get_payment_feed($entry, $form);
 
