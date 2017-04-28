@@ -27,6 +27,9 @@ class GFRazorpay extends GFPaymentAddOn {
 
     private static $_instance = null;
 
+    const GF_RAZORPAY_KEY = 'gf_razorpay_key';
+    const GF_RAZORPAY_SECRET = 'gf_razorpay_secret';
+
     public static function get_instance()
     {
         if (self::$_instance == null)
@@ -51,13 +54,13 @@ class GFRazorpay extends GFPaymentAddOn {
                 'title'       => '',
                 'fields'      => array(
                     array(
-                        'name'    => 'gf_razorpay_key',
+                        'name'    => self::GF_RAZORPAY_KEY,
                         'label'   => esc_html__( 'Razorpay Key', 'razorpay-gravity-forms' ),
                         'type'    => 'text',
                         'class'   => 'medium',
                     ),
                     array(
-                        'name'    => 'gf_razorpay_secret',
+                        'name'    => self::GF_RAZORPAY_SECRET,
                         'label'   => esc_html__( 'Razorpay Secret', 'razorpay-gravity-forms' ),
                         'type'    => 'text',
                         'class'   => 'medium',
@@ -112,8 +115,8 @@ class GFRazorpay extends GFPaymentAddOn {
 
         $entry = GFAPI::get_entry($entry_id);
 
-        $api = new Api($this->get_plugin_setting('gf_razorpay_key'),
-            $this->get_plugin_setting('gf_razorpay_secret'));
+        $api = new Api($this->get_plugin_setting(self::GF_RAZORPAY_KEY),
+            $this->get_plugin_setting(self::GF_RAZORPAY_SECRET));
 
         $attributes = array (
             'razorpay_order_id'   => $razorpay_order_id,
@@ -174,7 +177,7 @@ class GFRazorpay extends GFPaymentAddOn {
         $feed = $this->get_payment_feed($entry, $form);
 
         $razorpay_args = array(
-            'key'         => $this->get_plugin_setting('gf_razorpay_key'),
+            'key'         => $this->get_plugin_setting(self::GF_RAZORPAY_KEY),
             'name'        => $form['name'],
             'amount'      => (int) round($entry['payment_amount']*100),
             'currency'    => $entry['currency'],
