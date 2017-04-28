@@ -27,24 +27,25 @@ class GFRazorpay extends GFPaymentAddOn {
 
     private static $_instance = null;
 
-    public static function get_instance() {
-        if ( self::$_instance == null ) {
+    public static function get_instance()
+    {
+        if (self::$_instance == null)
+        {
             self::$_instance = new GFRazorpay();
         }
 
         return self::$_instance;
     }
 
-    private function __clone() {
-    }
-
-    public function init_frontend() {
+    public function init_frontend()
+    {
         parent::init_frontend();
 
-        add_action( 'gform_after_submission', array( $this, 'pay_using_razorpay'), 10, 2 );
+        add_action('gform_after_submission', array($this, 'pay_using_razorpay'), 10, 2);
     }
 
-    public function plugin_settings_fields() {
+    public function plugin_settings_fields()
+    {
         return array(
             array(
                 'title'       => '',
@@ -88,21 +89,23 @@ class GFRazorpay extends GFPaymentAddOn {
         return $fields;
     }
 
-    public function get_customer_fields() {
+    public function get_customer_fields()
+    {
         return array(
-            array( 'name' => 'first_name', 'label' => 'First Name', 'meta_name' => 'billingInformation_firstName' ),
-            array( 'name' => 'last_name', 'label' => 'Last Name', 'meta_name' => 'billingInformation_lastName' ),
-            array( 'name' => 'email', 'label' => 'Email', 'meta_name' => 'billingInformation_email' ),
-            array( 'name' => 'address1', 'label' => 'Address', 'meta_name' => 'billingInformation_address' ),
-            array( 'name' => 'address2', 'label' => 'Address 2', 'meta_name' => 'billingInformation_address2' ),
-            array( 'name' => 'city', 'label' => 'City', 'meta_name' => 'billingInformation_city' ),
-            array( 'name' => 'state', 'label' => 'State', 'meta_name' => 'billingInformation_state' ),
-            array( 'name' => 'zip', 'label' => 'Zip', 'meta_name' => 'billingInformation_zip' ),
-            array( 'name' => 'country', 'label' => 'Country', 'meta_name' => 'billingInformation_country' ),
+            array('name' => 'first_name', 'label' => 'First Name', 'meta_name' => 'billingInformation_firstName'),
+            array('name' => 'last_name', 'label' => 'Last Name', 'meta_name' => 'billingInformation_lastName'),
+            array('name' => 'email', 'label' => 'Email', 'meta_name' => 'billingInformation_email'),
+            array('name' => 'address1', 'label' => 'Address', 'meta_name' => 'billingInformation_address'),
+            array('name' => 'address2', 'label' => 'Address 2', 'meta_name' => 'billingInformation_address2'),
+            array('name' => 'city', 'label' => 'City', 'meta_name' => 'billingInformation_city'),
+            array('name' => 'state', 'label' => 'State', 'meta_name' => 'billingInformation_state'),
+            array('name' => 'zip', 'label' => 'Zip', 'meta_name' => 'billingInformation_zip'),
+            array('name' => 'country', 'label' => 'Country', 'meta_name' => 'billingInformation_country'),
         );
     }
 
-    public function callback() {
+    public function callback()
+    {
         $entry_id = $_COOKIE['entry_id'];
 
         $razorpay_order_id = $_COOKIE['razorpay_order_id'];
@@ -120,7 +123,7 @@ class GFRazorpay extends GFPaymentAddOn {
 
         $success = false;
 
-        if ($entry  and !empty(rgpost('razorpay_payment_id')) and !empty(rgpost('razorpay_signature')))
+        if ($entry and !empty(rgpost('razorpay_payment_id')) and !empty(rgpost('razorpay_signature')))
         {
             try
             {
@@ -155,7 +158,6 @@ class GFRazorpay extends GFPaymentAddOn {
         }
 
         return $action;
-
     }
 
     public function post_callback($callback_action, $callback_result) {
@@ -167,7 +169,8 @@ class GFRazorpay extends GFPaymentAddOn {
         do_action('gform_razorpay_post_payment_' . $callback_action['type'],  $_POST, $entry, $feed);
     }
 
-    public function generate_razorpay_form($entry, $customer_fields, $form){
+    public function generate_razorpay_form($entry, $customer_fields, $form)
+    {
         $feed = $this->get_payment_feed($entry, $form);
 
         $razorpay_args = array(
@@ -191,11 +194,36 @@ class GFRazorpay extends GFPaymentAddOn {
         $redirect_url = '?page=gf_razorpay_callback';
 
 
-        wp_enqueue_script('razorpay-script', plugin_dir_url( __FILE__ ) . 'script.js');
+        wp_enqueue_script('razorpay-script', plugin_dir_url( __FILE__ ) . 'script.js',
+            array('checkout'));
+
         wp_localize_script('razorpay-script', 'razorpay_script_vars', array(
-            'data' => $json,
-            'redirect_url' => $redirect_url,
+            'data' => $json
         ));
+
+        wp_register_script( 'checkout', 'https://checkout.razorpay.com/v1/checkout.js', null, null);
+
+        wp_enqueue_script('checkout');
+
+        return $this->generate_order_form($redirect_url);
+    }
+
+    function generate_order_form($redirect_url)
+    {
+        $html = <<<EOT
+<form id ='razorpayform' name='razorpayform' action="$redirect_url" method='POST'>
+    <input type='hidden' name='razorpay_payment_id' id='razorpay_payment_id'>
+    <input type='hidden' name='razorpay_signature'  id='razorpay_signature' >
+</form>
+<p id='msg-razorpay-success'  style='display:none'>
+    Please wait while we are processing your payment.
+</p>
+<p>
+    <button id='btn-razorpay'>Pay Now</button>
+    <button id='btn-razorpay-cancel' onclick='document.razorpayform.submit()'>Cancel</button>
+</p>
+EOT;
+        return $html;
     }
 
     public function is_callback_valid()
@@ -249,7 +277,6 @@ class GFRazorpay extends GFPaymentAddOn {
             time() + 86400, COOKIEPATH, COOKIE_DOMAIN, false, true);
 
 
-        $this->generate_razorpay_form($entry, $customer_fields, $form);
+        echo $this->generate_razorpay_form($entry, $customer_fields, $form);
     }
-
 }
