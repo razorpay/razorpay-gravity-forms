@@ -1,6 +1,9 @@
 === Razorpay for Gravity Forms ===
 Contributors: razorpay
 Tags: razorpay, payments, india, gravityforms, ecommerce
+Requires at least: 3.9.2
+Tested up to: 1.9.3
+Stable tag: 1.0.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -17,7 +20,7 @@ This is compatible with version greater than 1.9.3 gravity forms.
 1. Install the plugin from the [Wordpress Plugin Directory](Need to specify url).
 2. To use this plugin correctly, you need to be able to make network requests. Please make sure that you have the php-curl extension installed.
 
-== Dependencies == 
+== Dependencies ==
 
 1. Wordpress v3.9.2 and later
 2. Gravity Froms v1.9.3 and later
