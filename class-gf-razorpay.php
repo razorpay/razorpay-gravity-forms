@@ -285,7 +285,7 @@ EOT;
         //It will be null first time in the entry
         if (empty($paymentAmount) === true)
         {
-            $payment_amount = GFCommon::get_order_total($form, $entry);
+            $paymentAmount = GFCommon::get_order_total($form, $entry);
             gform_update_meta($entry['id'], 'payment_amount', $paymentAmount );
             $entry['payment_amount'] = $paymentAmount;
         }
