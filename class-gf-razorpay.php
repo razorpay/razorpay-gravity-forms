@@ -102,41 +102,50 @@ class GFRazorpay extends GFPaymentAddOn
     public function get_customer_fields()
     {
         return array(
-            array('name'      => 'first_name',
-                  'label'     => 'First Name',
-                  'meta_name' => 'billingInformation_firstName'
+            array(
+                'name'      => 'first_name',
+                'label'     => 'First Name',
+                'meta_name' => 'billingInformation_firstName'
             ),
-            array('name'      => 'last_name',
-                  'label'     => 'Last Name',
-                  'meta_name' => 'billingInformation_lastName'
+            array(
+                'name'      => 'last_name',
+                'label'     => 'Last Name',
+                'meta_name' => 'billingInformation_lastName'
             ),
-            array('name'      => 'email',
-                  'label'     => 'Email',
-                  'meta_name' => 'billingInformation_email'
+            array(
+                'name'      => 'email',
+                'label'     => 'Email',
+                'meta_name' => 'billingInformation_email'
             ),
-            array('name'      => 'address1',
-                  'label'     => 'Address',
-                  'meta_name' => 'billingInformation_address'
+            array(
+                'name'      => 'address1',
+                'label'     => 'Address',
+                'meta_name' => 'billingInformation_address'
             ),
-            array('name'      => 'address2',
-                  'label'     => 'Address 2',
-                  'meta_name' => 'billingInformation_address2'
+            array(
+                'name'      => 'address2',
+                'label'     => 'Address 2',
+                'meta_name' => 'billingInformation_address2'
             ),
-            array('name'      => 'city',
-                  'label'     => 'City',
-                  'meta_name' => 'billingInformation_city'
+            array(
+                'name'      => 'city',
+                'label'     => 'City',
+                'meta_name' => 'billingInformation_city'
             ),
-            array('name'      => 'state',
-                  'label'     => 'State',
-                  'meta_name' => 'billingInformation_state'
+            array(
+                'name'      => 'state',
+                'label'     => 'State',
+                'meta_name' => 'billingInformation_state'
             ),
-            array('name'      => 'zip',
-                  'label'     => 'Zip',
-                  'meta_name' => 'billingInformation_zip'
+            array(
+                'name'      => 'zip',
+                'label'     => 'Zip',
+                'meta_name' => 'billingInformation_zip'
             ),
-            array('name'      => 'country',
-                  'label'     => 'Country',
-                 'meta_name'  => 'billingInformation_country'
+            array(
+                'name'      => 'country',
+                'label'     => 'Country',
+                'meta_name'  => 'billingInformation_country'
             ),
         );
     }
@@ -149,8 +158,11 @@ class GFRazorpay extends GFPaymentAddOn
 
         $entry = GFAPI::get_entry($entryId);
 
-        $api = new Api($this->get_plugin_setting(self::GF_RAZORPAY_KEY),
-            $this->get_plugin_setting(self::GF_RAZORPAY_SECRET));
+        $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
+
+        $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
+
+        $api = new Api($key, $secret);
 
         $attributes = array (
             'razorpay_order_id'   => $razorpayOrderId,
@@ -169,7 +181,7 @@ class GFRazorpay extends GFPaymentAddOn
                 $api->utility->verifyPaymentSignature($attributes);
                 $success = true;
             }
-            catch (Errors\SignatureVerificationError $e)
+            catch (\Exception $e)
             {
                 $success = false;
             }
@@ -203,8 +215,10 @@ class GFRazorpay extends GFPaymentAddOn
     {
         $feed = $this->get_payment_feed($entry, $form);
 
+        $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
+
         $razorpayArgs = array(
-            'key'         => $this->get_plugin_setting(self::GF_RAZORPAY_KEY),
+            'key'         => $key,
             'name'        => $form['name'],
             'amount'      => (int) round($entry['payment_amount'] * 100),
             'currency'    => $entry['currency'],
@@ -290,8 +304,11 @@ EOT;
             $entry['payment_amount'] = $paymentAmount;
         }
 
-        $api = new Api($this->get_plugin_setting('gf_razorpay_key'),
-            $this->get_plugin_setting('gf_razorpay_secret'));
+        $key = $this->get_plugin_setting('gf_razorpay_key');
+
+        $secret = $this->get_plugin_setting('gf_razorpay_secret');
+
+        $api = new Api($key, $secret);
 
         $data = array(
             'receipt'         => $entry['id'],
