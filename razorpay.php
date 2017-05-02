@@ -12,7 +12,7 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 == Description ==
 
-This is the official Razorpay payment gateway plugin for Gravity Forma. Allows you to accept credit cards, debit cards, netbanking with the WooCommerce plugin. It uses a seamles integration, allowing the customer to pay on your website without being redirected away from your woocommerce website.
+This is the official Razorpay payment gateway plugin for Gravity Forma. Allows you to accept credit cards, debit cards, netbanking and wallet with the gravity form plugin. It uses a seamles integration, allowing the customer to pay on your website without being redirected away from your website.
 
 */
 
@@ -22,11 +22,9 @@ add_action('gform_loaded', array( 'GF_Razorpay_Bootstrap', 'load'), 5);
 
 class GF_Razorpay_Bootstrap
 {
-
 	public static function load()
 	{
-
-		if (!method_exists('GFForms', 'include_payment_addon_framework'))
+		if (method_exists('GFForms', 'include_payment_addon_framework') === false)
 		{
 			return;
 		}
