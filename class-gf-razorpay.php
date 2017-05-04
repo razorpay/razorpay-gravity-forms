@@ -240,8 +240,19 @@ class GFRazorpay extends GFPaymentAddOn
 
             $feed  = $this->get_payment_feed($entry);
         }
+        if ($callback_action['type'] === 'fail_payment')
+        {
+            do_action('gform_razorpay_fail_payment', $entry, $feed);
 
-        do_action('gform_razorpay_post_payment', $callback_action,  $_POST, $entry, $feed);
+            echo $callback_action['error'];
+        }
+        else
+        {
+            do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'],
+                $callback_action['amount'], $entry, $feed);
+
+            echo ' Payment Successful. You transaction_id is ' . $callback_action['transaction_id'];
+        }
     }
 
     public function generate_razorpay_form($entry, $customerFields, $form)
