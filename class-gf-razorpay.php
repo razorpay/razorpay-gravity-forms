@@ -2,20 +2,21 @@
 
 require_once ('razorpay-sdk/Razorpay.php');
 use Razorpay\Api\Api;
+use Razorpay\Api\Errors;
 
 GFForms::include_payment_addon_framework();
 
 class GFRazorpay extends GFPaymentAddOn
 {
-    protected $_version                  = GF_RAZORPAY_VERSION;
-    protected $_min_gravityforms_version = '1.9.3';
-    protected $_slug                     = 'razorpay-gravity-forms';
-    protected $_path                     = 'razorpay-gravity-forms/razorpay.php';
-    protected $_full_path                = __FILE__;
-    protected $_url                      = 'http://www.gravityforms.com';
-    protected $_title                    = 'Gravity Forms Razorpay Add-On';
-    protected $_short_title              = 'Razorpay';
-    protected $_supports_callbacks       = true;
+    protected $_version                    = GF_RAZORPAY_VERSION;
+    protected $_min_gravityforms_version   = '1.9.3';
+    protected $_slug                       = 'razorpay-gravity-forms';
+    protected $_path                       = 'razorpay-gravity-forms/razorpay.php';
+    protected $_full_path                  = __FILE__;
+    protected $_url                        = 'http://www.gravityforms.com';
+    protected $_title                      = 'Gravity Forms Razorpay Add-On';
+    protected $_short_title                = 'Razorpay';
+    protected $_supports_callbacks         = true;
 
     // Permissions
     protected $_capabilities_settings_page = 'gravityforms_razorpay';
@@ -23,17 +24,17 @@ class GFRazorpay extends GFPaymentAddOn
     protected $_capabilities_uninstall     = 'gravityforms_razorpay_uninstall';
 
     // Automatic upgrade enabled
-    protected $_enable_rg_autoupgrade = true;
+    protected $_enable_rg_autoupgrade      = true;
 
-    private static $_instance = null;
+    private static $_instance              = null;
 
-    const GF_RAZORPAY_KEY    = 'gf_razorpay_key';
-    const GF_RAZORPAY_SECRET = 'gf_razorpay_secret';
-    const RAZORPAY_ENTRY_ID  = 'gf_razorpay_entry_id';
-    const RAZORPAY_ORDER_ID  = 'razorpay_order_id';
+    const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
+    const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
+    const RAZORPAY_ENTRY_ID                = 'gf_razorpay_entry_id';
+    const RAZORPAY_ORDER_ID                = 'razorpay_order_id';
 
     //cookie set for one day
-    const COOKIE_DURATION    = 86400;
+    const COOKIE_DURATION                  = 86400;
 
     public static function get_instance()
     {
@@ -56,23 +57,23 @@ class GFRazorpay extends GFPaymentAddOn
     {
         return array(
             array(
-                'title'       => 'razorpay_settings',
-                'fields'      => array(
+                'title'               => 'razorpay_settings',
+                'fields'              => array(
                     array(
-                        'name'    => self::GF_RAZORPAY_KEY,
-                        'label'   => esc_html__('Razorpay Key', 'razorpay-gravity-forms'),
-                        'type'    => 'text',
-                        'class'   => 'medium',
+                        'name'        => self::GF_RAZORPAY_KEY,
+                        'label'       => esc_html__('Razorpay Key', 'razorpay-gravity-forms'),
+                        'type'        => 'text',
+                        'class'       => 'medium',
                     ),
                     array(
-                        'name'    => self::GF_RAZORPAY_SECRET,
-                        'label'   => esc_html__('Razorpay Secret', 'razorpay-gravity-forms' ),
-                        'type'    => 'text',
-                        'class'   => 'medium',
+                        'name'        => self::GF_RAZORPAY_SECRET,
+                        'label'       => esc_html__('Razorpay Secret', 'razorpay-gravity-forms' ),
+                        'type'        => 'text',
+                        'class'       => 'medium',
                     ),
                     array(
-                        'type' => 'save',
-                        'messages' => array(
+                        'type'        => 'save',
+                        'messages'    => array(
                             'success' => esc_html__('Settings have been updated.', 'razorpay-gravity-forms' )
                         ),
                     ),
@@ -145,7 +146,7 @@ class GFRazorpay extends GFPaymentAddOn
             array(
                 'name'      => 'country',
                 'label'     => 'Country',
-                'meta_name'  => 'billingInformation_country'
+                'meta_name' => 'billingInformation_country'
             ),
         );
     }
@@ -153,8 +154,6 @@ class GFRazorpay extends GFPaymentAddOn
     public function callback()
     {
         $entryId = $_COOKIE[self::RAZORPAY_ENTRY_ID];
-
-        $razorpayOrderId = $_COOKIE[self::RAZORPAY_ORDER_ID];
 
         $entry = GFAPI::get_entry($entryId);
 
@@ -164,26 +163,24 @@ class GFRazorpay extends GFPaymentAddOn
 
         $api = new Api($key, $secret);
 
-        $attributes = array (
-            'razorpay_order_id'   => $razorpayOrderId,
-            'razorpay_payment_id' => rgpost('razorpay_payment_id'),
-            'razorpay_signature'  => rgpost('razorpay_signature'),
-        );
+        $attributes = $this->get_callback_attributes();
 
         $success = false;
 
-        if (($entry !== null) and
-            (empty(rgpost('razorpay_payment_id')) === false) and
-            (empty(rgpost('razorpay_signature')) ===false))
+        $error = 'Payment Failed';
+
+        if ((empty($entry) === false) and
+            (empty($attributes['razorpay_payment_id']) === false) and
+            (empty($attributes['razorpay_signature']) ===false))
         {
             try
             {
                 $api->utility->verifyPaymentSignature($attributes);
                 $success = true;
             }
-            catch (\Exception $e)
+            catch (Errors\SignatureVerificationError $e)
             {
-                $success = false;
+                $error = $e->getMessage();
             }
         }
 
@@ -198,17 +195,28 @@ class GFRazorpay extends GFPaymentAddOn
         if ($success === false)
         {
             $action['type'] = 'fail_payment';
+
+            $action['error'] = $error;
         }
 
         return $action;
     }
 
+    public function get_callback_attributes()
+    {
+        return array(
+            'razorpay_order_id'   => $_COOKIE[self::RAZORPAY_ORDER_ID],
+            'razorpay_payment_id' => rgpost('razorpay_payment_id'),
+            'razorpay_signature'  => rgpost('razorpay_signature'),
+        );
+    }
+
     public function post_callback($callback_action, $callback_result)
     {
-        $entry               = GFAPI::get_entry($callback_action['entry_id']);
-        $feed                = $this->get_payment_feed($entry );
+        $entry = GFAPI::get_entry($callback_action['entry_id']);
+        $feed  = $this->get_payment_feed($entry );
 
-        do_action('gform_razorpay_post_payment_' . $callback_action['type'],  $_POST, $entry, $feed);
+        do_action('gform_razorpay_post_payment', $callback_action,  $_POST, $entry, $feed);
     }
 
     public function generate_razorpay_form($entry, $customerFields, $form)
@@ -233,9 +241,6 @@ class GFRazorpay extends GFPaymentAddOn
             'order_id'    => $entry['razorpay_order_id'],
         );
 
-        $redirectUrl = '?page=gf_razorpay_callback';
-
-
         wp_enqueue_script('razorpay_script',
                           plugin_dir_url(__FILE__). 'script.js',
                           array('checkout')
@@ -251,9 +256,12 @@ class GFRazorpay extends GFPaymentAddOn
         wp_register_script('checkout',
                            'https://checkout.razorpay.com/v1/checkout.js',
                            null,
-                           null);
+                           null
+        );
 
         wp_enqueue_script('checkout');
+
+        $redirectUrl = '?page=gf_razorpay_callback';
 
         return $this->generate_order_form($redirectUrl);
     }
@@ -269,7 +277,7 @@ class GFRazorpay extends GFPaymentAddOn
     Please wait while we are processing your payment.
 </p>
 <p>
-    <button id='btn-razorpay'>Pay Now</button>
+    <button id='btn-razorpay'>Pay With Razorpay</button>
     <button id='btn-razorpay-cancel' onclick='document.razorpayform.submit()'>Cancel</button>
 </p>
 EOT;
@@ -278,8 +286,8 @@ EOT;
 
     public function is_callback_valid()
     {
-        //Will check if the return url is valid
-        if (rgget('page')!== 'gf_razorpay_callback')
+        // Will check if the return url is valid
+        if (rgget('page') !== 'gf_razorpay_callback')
         {
             return false;
         }
