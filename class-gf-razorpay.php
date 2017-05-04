@@ -160,7 +160,19 @@ class GFRazorpay extends GFPaymentAddOn
 
         $api = new Api($key, $secret);
 
-        $order = $api->order->fetch($razorpayOrderId);
+        try
+        {
+            $order = $api->order->fetch($razorpayOrderId);
+        }
+        catch (\Exception $e)
+        {
+            $action = array(
+                'type'  => 'fail_payment',
+                'error' => $e->getMessage()
+            );
+
+            return $action;
+        }
 
         $entryId = $order['receipt'];
 
@@ -168,9 +180,16 @@ class GFRazorpay extends GFPaymentAddOn
 
         $attributes = $this->get_callback_attributes();
 
-        $success = false;
+        $action = array(
+            'id'             => $attributes['razorpay_payment_id'],
+            'type'           => 'fail_payment',
+            'transaction_id' => $attributes['razorpay_payment_id'],
+            'amount'         => $entry['payment_amount'],
+            'entry_id'       => $entry['id'],
+            'error'          => 'Payment Failed',
+        );
 
-        $error = 'Payment Failed';
+        $success = false;
 
         if ((empty($entry) === false) and
             (empty($attributes['razorpay_payment_id']) === false) and
@@ -179,27 +198,22 @@ class GFRazorpay extends GFPaymentAddOn
             try
             {
                 $api->utility->verifyPaymentSignature($attributes);
+
                 $success = true;
             }
             catch (Errors\SignatureVerificationError $e)
             {
-                $error = $e->getMessage();
+                $action['error'] = $e->getMessage();
+
+                return $action;
             }
         }
 
-        $action = array(
-            'id'             => $attributes['razorpay_payment_id'],
-            'type'           => 'complete_payment',
-            'transaction_id' => $attributes['razorpay_payment_id'],
-            'amount'         => $entry['payment_amount'],
-            'entry_id'       => $entry['id']
-        );
-
-        if ($success === false)
+        if ($success === true)
         {
-            $action['type'] = 'fail_payment';
+            $action['type'] = 'complete_payment';
 
-            $action['error'] = $error;
+            $action['error'] = null;
         }
 
         return $action;
@@ -216,9 +230,16 @@ class GFRazorpay extends GFPaymentAddOn
 
     public function post_callback($callback_action, $callback_result)
     {
-        $entry = GFAPI::get_entry($callback_action['entry_id']);
+        $entry = null;
 
-        $feed  = $this->get_payment_feed($entry );
+        $feed = null;
+
+        if (isset($callback_action['entry_id']) === true)
+        {
+            $entry = GFAPI::get_entry($callback_action['entry_id']);
+
+            $feed  = $this->get_payment_feed($entry);
+        }
 
         do_action('gform_razorpay_post_payment', $callback_action,  $_POST, $entry, $feed);
     }
