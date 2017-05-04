@@ -30,7 +30,6 @@ class GFRazorpay extends GFPaymentAddOn
 
     const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
     const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
-    const RAZORPAY_ENTRY_ID                = 'gf_razorpay_entry_id';
     const RAZORPAY_ORDER_ID                = 'razorpay_order_id';
 
     //cookie set for one day
@@ -153,15 +152,19 @@ class GFRazorpay extends GFPaymentAddOn
 
     public function callback()
     {
-        $entryId = $_COOKIE[self::RAZORPAY_ENTRY_ID];
-
-        $entry = GFAPI::get_entry($entryId);
+        $razorpayOrderId = $_COOKIE[self::RAZORPAY_ORDER_ID];
 
         $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
         $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
 
         $api = new Api($key, $secret);
+
+        $order = $api->order->fetch($razorpayOrderId);
+
+        $entryId = $order['receipt'];
+
+        $entry = GFAPI::get_entry($entryId);
 
         $attributes = $this->get_callback_attributes();
 
@@ -206,14 +209,15 @@ class GFRazorpay extends GFPaymentAddOn
     {
         return array(
             'razorpay_order_id'   => $_COOKIE[self::RAZORPAY_ORDER_ID],
-            'razorpay_payment_id' => rgpost('razorpay_payment_id'),
-            'razorpay_signature'  => rgpost('razorpay_signature'),
+            'razorpay_payment_id' => sanitize_text_field(rgpost('razorpay_payment_id')),
+            'razorpay_signature'  => sanitize_text_field(rgpost('razorpay_signature')),
         );
     }
 
     public function post_callback($callback_action, $callback_result)
     {
         $entry = GFAPI::get_entry($callback_action['entry_id']);
+
         $feed  = $this->get_payment_feed($entry );
 
         do_action('gform_razorpay_post_payment', $callback_action,  $_POST, $entry, $feed);
@@ -308,7 +312,7 @@ EOT;
         if (empty($paymentAmount) === true)
         {
             $paymentAmount = GFCommon::get_order_total($form, $entry);
-            gform_update_meta($entry['id'], 'payment_amount', $paymentAmount );
+            gform_update_meta($entry['id'], 'payment_amount', $paymentAmount);
             $entry['payment_amount'] = $paymentAmount;
         }
 
@@ -332,9 +336,6 @@ EOT;
         $entry['razorpay_order_id'] = $razorpayOrder['id'];
 
         GFAPI::update_entry($entry);
-
-        setcookie(self::RAZORPAY_ENTRY_ID, $entry['id'],
-            time() + self::COOKIE_DURATION, COOKIEPATH, COOKIE_DOMAIN, false, true);
 
         setcookie(self::RAZORPAY_ORDER_ID, $entry['razorpay_order_id'],
             time() + self::COOKIE_DURATION, COOKIEPATH, COOKIE_DOMAIN, false, true);
