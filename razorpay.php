@@ -22,20 +22,34 @@ add_action('gform_loaded', array('GF_Razorpay_Bootstrap', 'load'), 5);
 
 class GF_Razorpay_Bootstrap
 {
-	public static function load()
-	{
-		if (method_exists('GFForms', 'include_payment_addon_framework') === false)
-		{
-			return;
-		}
+    public static function load()
+    {
+        if (method_exists('GFForms', 'include_payment_addon_framework') === false)
+        {
+            return;
+        }
 
-		require_once('class-gf-razorpay.php');
+        require_once('class-gf-razorpay.php');
 
-		GFAddOn::register('GFRazorpay');
-	}
+        GFAddOn::register('GFRazorpay');
+
+        add_filter('gform_currencies', function (array $currencies) {
+            $currencies['INR'] = array(
+                'name'               => __( 'Indian Rupee', 'gravityforms' ),
+                'symbol_left'        => '&#8377;',
+                'symbol_right'       => '',
+                'symbol_padding'     => ' ',
+                'thousand_separator' => ',',
+                'decimal_separator'  => '.',
+                'decimals'           => 2
+            );
+
+            return $currencies;
+        });
+    }
 }
 
 function gf_razorpay()
 {
-	return GFRazorpay::get_instance();
+    return GFRazorpay::get_instance();
 }

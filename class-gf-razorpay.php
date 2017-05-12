@@ -17,6 +17,7 @@ class GFRazorpay extends GFPaymentAddOn
     protected $_title                      = 'Gravity Forms Razorpay Add-On';
     protected $_short_title                = 'Razorpay';
     protected $_supports_callbacks         = true;
+    public $_async_feed_processing         = false;
 
     // Permissions
     protected $_capabilities_settings_page = 'gravityforms_razorpay';
