@@ -23,14 +23,14 @@ This is compatible with version greater than 1.9.3 gravity forms.
 == Dependencies ==
 
 1. Wordpress v3.9.2 and later
-2. Gravity Froms v1.9.3 and later
+2. Gravity Forms v1.9.3 and later
 3. PHP v5.6.0 and later
 4. php-curl
 
 == Configuration ==
 
-1. Visit the Gravity Froms settings page, and click on the Razorpay tab.
-2. Add in your Key id and Key Secret.
+1. Visit the Gravity Forms settings page, and click on the Razorpay tab.
+2. Add in your Key Id and Key Secret.
 
 == Support ==
 
