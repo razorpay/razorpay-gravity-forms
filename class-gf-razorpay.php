@@ -8,6 +8,17 @@ GFForms::include_payment_addon_framework();
 
 class GFRazorpay extends GFPaymentAddOn
 {
+    const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
+    const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
+    const RAZORPAY_ORDER_ID                = 'razorpay_order_id';
+
+    //cookie set for one day
+    const COOKIE_DURATION                  = 86400;
+
+    const CUSTOMER_FIELDS_NAME             = 'name';
+    const CUSTOMER_FIELDS_EMAIL            = 'email';
+    const CUSTOMER_FIELDS_CONTACT          = 'contact';
+
     protected $_version                    = GF_RAZORPAY_VERSION;
     protected $_min_gravityforms_version   = '1.9.3';
     protected $_slug                       = 'razorpay-gravity-forms';
@@ -28,13 +39,6 @@ class GFRazorpay extends GFPaymentAddOn
     protected $_enable_rg_autoupgrade      = true;
 
     private static $_instance              = null;
-
-    const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
-    const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
-    const RAZORPAY_ORDER_ID                = 'razorpay_order_id';
-
-    //cookie set for one day
-    const COOKIE_DURATION                  = 86400;
 
     public static function get_instance()
     {
@@ -82,73 +86,22 @@ class GFRazorpay extends GFPaymentAddOn
         );
     }
 
-    public function get_customer_fields_array($feed, $entry)
+    public function get_customer_fields($form, $feed, $entry)
     {
         $fields = array();
 
-        $customerFields = $this->get_customer_fields();
+        $billing_fields = $this->billing_info_fields();
 
-        foreach ($customerFields as $field)
+        foreach ($billing_fields as $field)
         {
-            $fieldId = $feed['meta'][$field['meta_name']];
+            $field_id = $feed['meta']['billingInformation_' . $field['name']];
 
-            $value = rgar($entry, $fieldId);
+            $value = $this->get_field_value($form, $entry, $field_id);
 
-            $fields[$field['meta_name']] = $value;
+            $fields[$field['name']] = $value;
         }
 
         return $fields;
-    }
-
-    public function get_customer_fields()
-    {
-        return array(
-            array(
-                'name'      => 'first_name',
-                'label'     => 'First Name',
-                'meta_name' => 'billingInformation_firstName'
-            ),
-            array(
-                'name'      => 'last_name',
-                'label'     => 'Last Name',
-                'meta_name' => 'billingInformation_lastName'
-            ),
-            array(
-                'name'      => 'email',
-                'label'     => 'Email',
-                'meta_name' => 'billingInformation_email'
-            ),
-            array(
-                'name'      => 'address1',
-                'label'     => 'Address',
-                'meta_name' => 'billingInformation_address'
-            ),
-            array(
-                'name'      => 'address2',
-                'label'     => 'Address 2',
-                'meta_name' => 'billingInformation_address2'
-            ),
-            array(
-                'name'      => 'city',
-                'label'     => 'City',
-                'meta_name' => 'billingInformation_city'
-            ),
-            array(
-                'name'      => 'state',
-                'label'     => 'State',
-                'meta_name' => 'billingInformation_state'
-            ),
-            array(
-                'name'      => 'zip',
-                'label'     => 'Zip',
-                'meta_name' => 'billingInformation_zip'
-            ),
-            array(
-                'name'      => 'country',
-                'label'     => 'Country',
-                'meta_name' => 'billingInformation_country'
-            ),
-        );
     }
 
     public function callback()
@@ -256,21 +209,25 @@ class GFRazorpay extends GFPaymentAddOn
         }
     }
 
-    public function generate_razorpay_form($entry, $customerFields, $form)
+    public function generate_razorpay_form($entry, $form)
     {
+
         $feed = $this->get_payment_feed($entry, $form);
+
+        $customerFields = $this->get_customer_fields($form, $feed, $entry);
 
         $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
         $razorpayArgs = array(
             'key'         => $key,
-            'name'        => $form['name'],
+            'name'        => get_bloginfo('name'),
             'amount'      => (int) round($entry['payment_amount'] * 100),
             'currency'    => $entry['currency'],
             'description' => $form['description'],
             'prefill'     => array(
-                'name'    => $customerFields['billingInformation_firstName'],
-                'email'   => $customerFields['billingInformation_email'],
+                'name'    => $customerFields[self::CUSTOMER_FIELDS_NAME],
+                'email'   => $customerFields[self::CUSTOMER_FIELDS_EMAIL],
+                'contact' => $customerFields[self::CUSTOMER_FIELDS_CONTACT],
             ),
             'notes'       => array(
                 'gravity_forms_order_id' => $entry['id']
@@ -298,15 +255,15 @@ class GFRazorpay extends GFPaymentAddOn
 
         wp_enqueue_script('checkout');
 
-        $redirectUrl = '?page=gf_razorpay_callback';
+        $redirect_url = '?page=gf_razorpay_callback';
 
-        return $this->generate_order_form($redirectUrl);
+        return $this->generate_order_form($redirect_url);
     }
 
-    function generate_order_form($redirectUrl)
+    function generate_order_form($redirect_url)
     {
         $html = <<<EOT
-<form id ='razorpayform' name='razorpayform' action="$redirectUrl" method='POST'>
+<form id ='razorpayform' name='razorpayform' action="$redirect_url" method='POST'>
     <input type='hidden' name='razorpay_payment_id' id='razorpay_payment_id'>
     <input type='hidden' name='razorpay_signature'  id='razorpay_signature' >
 </form>
@@ -334,10 +291,6 @@ EOT;
 
     public function pay_using_razorpay($entry, $form)
     {
-        $feed = $this->get_payment_feed($entry, $form);
-
-        $customerFields = $this->get_customer_fields_array($feed, $entry);
-
         //gravity form method to get value of payment_amount key from entry
         $paymentAmount = rgar($entry, 'payment_amount' );
 
@@ -373,6 +326,17 @@ EOT;
         setcookie(self::RAZORPAY_ORDER_ID, $entry['razorpay_order_id'],
             time() + self::COOKIE_DURATION, COOKIEPATH, COOKIE_DOMAIN, false, true);
 
-        echo $this->generate_razorpay_form($entry, $customerFields, $form);
+        echo $this->generate_razorpay_form($entry, $form);
+    }
+
+    public function billing_info_fields()
+    {
+        $fields = array(
+            array( 'name' => self::CUSTOMER_FIELDS_NAME, 'label' => esc_html__( 'Name', 'gravityforms' ), 'required' => false ),
+            array( 'name' => self::CUSTOMER_FIELDS_EMAIL, 'label' => esc_html__( 'Email', 'gravityforms' ), 'required' => false ),
+            array( 'name' => self::CUSTOMER_FIELDS_CONTACT, 'label' => esc_html__( 'Phone', 'gravityforms' ), 'required' => false ),
+        );
+
+        return $fields;
     }
 }
