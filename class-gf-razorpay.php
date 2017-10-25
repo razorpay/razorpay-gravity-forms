@@ -1,6 +1,7 @@
 <?php
 
 require_once ('razorpay-sdk/Razorpay.php');
+
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors;
 
@@ -10,7 +11,10 @@ class GFRazorpay extends GFPaymentAddOn
 {
     const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
     const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
+
     const RAZORPAY_ORDER_ID                = 'razorpay_order_id';
+    const RAZORPAY_PAYMENT_ID              = 'razorpay_payment_id';
+    const RAZORPAY_SIGNATURE               = 'razorpay_signature';
 
     //cookie set for one day
     const COOKIE_DURATION                  = 86400;
@@ -135,9 +139,9 @@ class GFRazorpay extends GFPaymentAddOn
         $attributes = $this->get_callback_attributes();
 
         $action = array(
-            'id'             => $attributes['razorpay_payment_id'],
+            'id'             => $attributes[self::RAZORPAY_PAYMENT_ID],
             'type'           => 'fail_payment',
-            'transaction_id' => $attributes['razorpay_payment_id'],
+            'transaction_id' => $attributes[self::RAZORPAY_PAYMENT_ID],
             'amount'         => $entry['payment_amount'],
             'entry_id'       => $entry['id'],
             'error'          => 'Payment Failed',
@@ -146,8 +150,8 @@ class GFRazorpay extends GFPaymentAddOn
         $success = false;
 
         if ((empty($entry) === false) and
-            (empty($attributes['razorpay_payment_id']) === false) and
-            (empty($attributes['razorpay_signature']) ===false))
+            (empty($attributes[self::RAZORPAY_PAYMENT_ID]) === false) and
+            (empty($attributes[self::RAZORPAY_SIGNATURE]) ===false))
         {
             try
             {
@@ -176,9 +180,9 @@ class GFRazorpay extends GFPaymentAddOn
     public function get_callback_attributes()
     {
         return array(
-            'razorpay_order_id'   => $_COOKIE[self::RAZORPAY_ORDER_ID],
-            'razorpay_payment_id' => sanitize_text_field(rgpost('razorpay_payment_id')),
-            'razorpay_signature'  => sanitize_text_field(rgpost('razorpay_signature')),
+            self::RAZORPAY_ORDER_ID   => $_COOKIE[self::RAZORPAY_ORDER_ID],
+            self::RAZORPAY_PAYMENT_ID => sanitize_text_field(rgpost(self::RAZORPAY_PAYMENT_ID)),
+            self::RAZORPAY_SIGNATURE  => sanitize_text_field(rgpost(self::RAZORPAY_SIGNATURE)),
         );
     }
 
@@ -232,7 +236,7 @@ class GFRazorpay extends GFPaymentAddOn
             'notes'       => array(
                 'gravity_forms_order_id' => $entry['id']
             ),
-            'order_id'    => $entry['razorpay_order_id'],
+            'order_id'    => $entry[self::RAZORPAY_ORDER_ID],
         );
 
         wp_enqueue_script('razorpay_script',
@@ -302,9 +306,9 @@ EOT;
             $entry['payment_amount'] = $paymentAmount;
         }
 
-        $key = $this->get_plugin_setting('gf_razorpay_key');
+        $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
-        $secret = $this->get_plugin_setting('gf_razorpay_secret');
+        $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
 
         $api = new Api($key, $secret);
 
@@ -317,13 +321,13 @@ EOT;
 
         $razorpayOrder = $api->order->create($data);
 
-        gform_update_meta($entry['id'], 'razorpay_order_id', $razorpayOrder['id']);
+        gform_update_meta($entry['id'], self::RAZORPAY_ORDER_ID, $razorpayOrder['id']);
 
-        $entry['razorpay_order_id'] = $razorpayOrder['id'];
+        $entry[self::RAZORPAY_ORDER_ID] = $razorpayOrder['id'];
 
         GFAPI::update_entry($entry);
 
-        setcookie(self::RAZORPAY_ORDER_ID, $entry['razorpay_order_id'],
+        setcookie(self::RAZORPAY_ORDER_ID, $entry[self::RAZORPAY_ORDER_ID],
             time() + self::COOKIE_DURATION, COOKIEPATH, COOKIE_DOMAIN, false, true);
 
         echo $this->generate_razorpay_form($entry, $form);
