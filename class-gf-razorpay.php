@@ -9,39 +9,124 @@ GFForms::include_payment_addon_framework();
 
 class GFRazorpay extends GFPaymentAddOn
 {
+    /**
+     * Razorpay plugin config key ID and key secret
+     */
     const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
     const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
 
+    /**
+     * Razorpay API attributes
+     */
     const RAZORPAY_ORDER_ID                = 'razorpay_order_id';
     const RAZORPAY_PAYMENT_ID              = 'razorpay_payment_id';
     const RAZORPAY_SIGNATURE               = 'razorpay_signature';
 
-    //cookie set for one day
+    /**
+     * Cookie set for one day
+     */
     const COOKIE_DURATION                  = 86400;
 
+    /**
+     * Customer related fields
+     */
     const CUSTOMER_FIELDS_NAME             = 'name';
     const CUSTOMER_FIELDS_EMAIL            = 'email';
     const CUSTOMER_FIELDS_CONTACT          = 'contact';
 
+    // TODO: Check if all the variables below are needed
+
+    /**
+     * @var string Version of current plugin
+     */
     protected $_version                    = GF_RAZORPAY_VERSION;
+
+    /**
+     * @var string Minimum version of gravity forms
+     */
     protected $_min_gravityforms_version   = '1.9.3';
+
+    /**
+     * @var string URL-friendly identifier used for form settings, add-on settings, text domain localization...
+     */
     protected $_slug                       = 'razorpay-gravity-forms';
+
+    /**
+     * @var string Relative path to the plugin from the plugins folder. Example "gravityforms/gravityforms.php"
+     */
     protected $_path                       = 'razorpay-gravity-forms/razorpay.php';
+
+    /**
+     * @var string Full path the the plugin. Example: __FILE__
+     */
     protected $_full_path                  = __FILE__;
+
+    /**
+     * @var string URL to the Gravity Forms website. Example: 'http://www.gravityforms.com' OR affiliate link.
+     */
     protected $_url                        = 'http://www.gravityforms.com';
+
+    /**
+     * @var string Title of the plugin to be used on the settings page, form settings and plugins page. Example: 'Gravity Forms MailChimp Add-On'
+     */
     protected $_title                      = 'Gravity Forms Razorpay Add-On';
+
+    /**
+     * @var string Short version of the plugin title to be used on menus and other places where a less verbose string is useful. Example: 'MailChimp'
+     */
     protected $_short_title                = 'Razorpay';
+
+    /**
+     * Defines if the payment add-on supports callbacks.
+     *
+     * If set to true, callbacks/webhooks/IPN will be enabled and the appropriate database table will be created.
+     *
+     * @since  Unknown
+     * @access protected
+     *
+     * @used-by GFPaymentAddOn::upgrade_payment()
+     *
+     * @var bool True if the add-on supports callbacks. Otherwise, false.
+     */
     protected $_supports_callbacks         = true;
+
+
+    /**
+     * If true, feeds will be processed asynchronously in the background.
+     *
+     * @since 2.2
+     * @var bool
+     */
     public $_async_feed_processing         = false;
 
-    // Permissions
+    // --------------------------------------------- Permissions Start -------------------------------------------------
+
+    /**
+     * @var string|array A string or an array of capabilities or roles that have access to the settings page
+     */
     protected $_capabilities_settings_page = 'gravityforms_razorpay';
+
+    /**
+     * @var string|array A string or an array of capabilities or roles that have access to the form settings
+     */
     protected $_capabilities_form_settings = 'gravityforms_razorpay';
+
+    /**
+     * @var string|array A string or an array of capabilities or roles that can uninstall the plugin
+     */
     protected $_capabilities_uninstall     = 'gravityforms_razorpay_uninstall';
 
-    // Automatic upgrade enabled
+    // --------------------------------------------- Permissions End ---------------------------------------------------
+
+    /**
+     * @var bool Used by Rocketgenius plugins to activate auto-upgrade.
+     * @ignore
+     */
     protected $_enable_rg_autoupgrade      = true;
 
+    /**
+     * @var GFRazorpay
+     */
     private static $_instance              = null;
 
     public static function get_instance()
@@ -58,7 +143,7 @@ class GFRazorpay extends GFPaymentAddOn
     {
         parent::init_frontend();
 
-        add_action('gform_after_submission', array($this, 'pay_using_razorpay'), 10, 2);
+        add_action('gform_after_submission', array($this, 'generate_razorpay_order'), 10, 2);
     }
 
     public function plugin_settings_fields()
@@ -69,20 +154,20 @@ class GFRazorpay extends GFPaymentAddOn
                 'fields'              => array(
                     array(
                         'name'        => self::GF_RAZORPAY_KEY,
-                        'label'       => esc_html__('Razorpay Key', 'razorpay-gravity-forms'),
+                        'label'       => esc_html__('Razorpay Key', $this->_slug),
                         'type'        => 'text',
                         'class'       => 'medium',
                     ),
                     array(
                         'name'        => self::GF_RAZORPAY_SECRET,
-                        'label'       => esc_html__('Razorpay Secret', 'razorpay-gravity-forms' ),
+                        'label'       => esc_html__('Razorpay Secret', $this->_slug),
                         'type'        => 'text',
                         'class'       => 'medium',
                     ),
                     array(
                         'type'        => 'save',
                         'messages'    => array(
-                            'success' => esc_html__('Settings have been updated.', 'razorpay-gravity-forms' )
+                            'success' => esc_html__('Settings have been updated.', $this->_slug)
                         ),
                     ),
                 ),
@@ -151,7 +236,7 @@ class GFRazorpay extends GFPaymentAddOn
 
         if ((empty($entry) === false) and
             (empty($attributes[self::RAZORPAY_PAYMENT_ID]) === false) and
-            (empty($attributes[self::RAZORPAY_SIGNATURE]) ===false))
+            (empty($attributes[self::RAZORPAY_SIGNATURE]) === false))
         {
             try
             {
@@ -215,7 +300,6 @@ class GFRazorpay extends GFPaymentAddOn
 
     public function generate_razorpay_form($entry, $form)
     {
-
         $feed = $this->get_payment_feed($entry, $form);
 
         $customerFields = $this->get_customer_fields($form, $feed, $entry);
@@ -293,7 +377,7 @@ EOT;
         return true;
     }
 
-    public function pay_using_razorpay($entry, $form)
+    public function generate_razorpay_order($entry, $form)
     {
         //gravity form method to get value of payment_amount key from entry
         $paymentAmount = rgar($entry, 'payment_amount' );
