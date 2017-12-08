@@ -299,7 +299,6 @@ class GFRazorpay extends GFPaymentAddOn
 
     public static function maybe_thankyou_page()
     {
-        // TODO: Not working, but is working for paypal. Why is that?
         $instance = self::get_instance();
         if ( ! $instance->is_gravityforms_supported() )
         {
@@ -310,10 +309,11 @@ class GFRazorpay extends GFPaymentAddOn
         {
             $callback_action = $instance->callback();
 
-            // TODO: Check this
-            $instance->post_callback($callback_action, true);
+            $callback_result = $instance->handle_callback_action( $callback_action );
 
-            // TODO: Fix this
+            // TODO: Check this
+            $instance->post_callback($callback_action, $callback_result);
+
             $entry = GFAPI::get_entry($callback_action['entry_id']);
 
             $form_id = $entry['form_id'];
@@ -367,6 +367,62 @@ class GFRazorpay extends GFPaymentAddOn
                 );
             }
         }
+    }
+
+    protected function handle_callback_action($action)
+    {
+        $result = false;
+
+        if ( rgar( $action, 'id' ) && $this->is_duplicate_callback( $action['id'] ) )
+        {
+            return new WP_Error( 'duplicate', sprintf( esc_html__( 'This webhook has already been processed (Event Id: %s)', 'gravityforms' ), $action['id'] ) );
+        }
+
+        $entry = GFAPI::get_entry($action['entry_id']);
+
+        if ( ! $entry || is_wp_error( $entry ) )
+        {
+            return $result;
+        }
+
+        /**
+         * Performs actions before the the payment action callback is processed.
+         *
+         * @since Unknown
+         *
+         * @param array $action The action array.
+         * @param array $entry  The Entry Object.
+         */
+        do_action( 'gform_action_pre_payment_callback', $action, $entry );
+        if ( has_filter( 'gform_action_pre_payment_callback' ) )
+        {
+            $this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_action_pre_payment_callback.' );
+        }
+
+        switch ( $action['type'] )
+        {
+            case 'complete_payment':
+                $result = $this->complete_payment($entry, $action);
+                break;
+            case 'fail_payment':
+                $result = $this->fail_payment($entry, $action);
+                break;
+            default:
+                break;
+        }
+
+        if ( rgar( $action, 'id' ) && $result )
+        {
+            $this->register_callback( $action['id'], $action['entry_id'] );
+        }
+
+        do_action( 'gform_post_payment_callback', $entry, $action, $result );
+        if ( has_filter( 'gform_post_payment_callback' ) )
+        {
+            $this->log_debug( __METHOD__ . '(): Executing functions hooked to gform_post_payment_callback.' );
+        }
+
+        return $result;
     }
 
     public function generate_razorpay_form($entry, $form)
