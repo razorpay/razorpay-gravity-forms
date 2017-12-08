@@ -2,6 +2,8 @@
 
 require_once ('razorpay-sdk/Razorpay.php');
 
+add_action( 'wp', array( 'GFRazorpay', 'maybe_thankyou_page' ), 5 );
+
 use Razorpay\Api\Api;
 use Razorpay\Api\Errors;
 
@@ -283,18 +285,87 @@ class GFRazorpay extends GFPaymentAddOn
 
             $feed  = $this->get_payment_feed($entry);
         }
+
         if ($callback_action['type'] === 'fail_payment')
         {
             do_action('gform_razorpay_fail_payment', $entry, $feed);
-
-            echo $callback_action['error'];
         }
         else
         {
             do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'],
                 $callback_action['amount'], $entry, $feed);
+        }
+    }
 
-            echo ' Payment Successful. You transaction_id is ' . $callback_action['transaction_id'];
+    public static function maybe_thankyou_page()
+    {
+        // TODO: Not working, but is working for paypal. Why is that?
+        $instance = self::get_instance();
+        if ( ! $instance->is_gravityforms_supported() )
+        {
+            return;
+        }
+
+        if ( 'gf_razorpay_callback' === rgget( 'page' ) )
+        {
+            $callback_action = $instance->callback();
+
+            // TODO: Check this
+            $instance->post_callback($callback_action, true);
+
+            // TODO: Fix this
+            $entry = GFAPI::get_entry($callback_action['entry_id']);
+
+            $form_id = $entry['form_id'];
+            $lead_id = $entry['id'];
+
+            $form = GFAPI::get_form( $form_id );
+            $lead = GFAPI::get_entry( $lead_id );
+
+            if ( ! class_exists( 'GFFormDisplay' ) ) {
+                require_once(GFCommon::get_base_path() . '/form_display.php');
+            }
+
+            if ($callback_action['type'] === 'complete_payment')
+            {
+                $confirmation = GFFormDisplay::handle_confirmation( $form, $lead, false );
+
+                if ( is_array( $confirmation ) && isset( $confirmation['redirect'] ) )
+                {
+                    header( "Location: {$confirmation['redirect']}" );
+                    exit;
+                }
+
+                GFFormDisplay::$submission[ $form_id ] = array(
+                    'is_confirmation' => true,
+                    'confirmation_message' => $confirmation,
+                    'form' => $form,
+                    'lead' => $lead
+                );
+            }
+            else if ($callback_action['type'] === 'fail_payment')
+            {
+                // TODO: This may not be the best way to do it
+                foreach ($form['confirmations'] as $index => $confirmation)
+                {
+                    $form['confirmations'][$index]['message'] = 'Thank you for attempting a payment. However, your payment failed';
+                }
+
+                $confirmation = GFFormDisplay::handle_confirmation( $form, $lead, false );
+
+                if ( is_array( $confirmation ) && isset( $confirmation['redirect'] ) )
+                {
+                    header( "Location: {$confirmation['redirect']}" );
+                    exit;
+                }
+
+                GFFormDisplay::$submission[ $form_id ] = array(
+                    'is_confirmation' => false,
+                    'confirmation_message' => $confirmation,
+                    'form' => $form,
+                    'lead' => $lead
+                );
+            }
         }
     }
 
@@ -368,13 +439,8 @@ EOT;
 
     public function is_callback_valid()
     {
-        // Will check if the return url is valid
-        if (rgget('page') !== 'gf_razorpay_callback')
-        {
-            return false;
-        }
-
-        return true;
+        // TODO: Should we unconditionally return false here?
+        return false;
     }
 
     public function generate_razorpay_order($entry, $form)

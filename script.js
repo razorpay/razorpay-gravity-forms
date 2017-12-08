@@ -20,7 +20,20 @@ function invokeRZP() {
         ondismiss: function() {
             setDisabled('btn-razorpay', false);
             document.getElementById('razorpayform').action = '';
+
+            // When checkout is dismissed, set random values to fail payment
+            // TODO: This is not working like it should. Handle this correctly.
+            document.getElementById('razorpay_payment_id').value =
+                'razorpay_payment_id';
+
+            document.getElementById('razorpay_signature').value =
+                'razorpay_signature';
+
             document.razorpayform.submit();
+
+            var url = window.location.origin + window.location.pathname + '?page=gf_razorpay_callback';
+
+            window.location.href = url;
         }
     };
 
@@ -46,7 +59,6 @@ function invokeRZP() {
     function openCheckout() {
         // Disable the pay button
         setDisabled('btn-razorpay');
-
         razorpayCheckout.open();
     }
 
