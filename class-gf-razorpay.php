@@ -139,35 +139,6 @@ class GFRazorpay extends GFPaymentAddOn
         return self::$_instance;
     }
 
-    public function init_frontend()
-    {
-        parent::init_frontend();
-
-        add_filter( 'gform_disable_notification', array( $this, 'delay_notification' ), 10, 4 );
-
-    }
-
-    public function delay_notification( $is_disabled, $notification, $form, $entry )
-    {
-        if ( rgar( $notification, 'event' ) != 'form_submission' )
-        {
-            return $is_disabled;
-        }
-
-        $feed            = $this->get_payment_feed( $entry );
-
-        $submission_data = $this->get_submission_data( $feed, $form, $entry );
-
-        if ( ! $feed || empty( $submission_data['payment_amount'] ) )
-        {
-            return $is_disabled;
-        }
-
-        $selected_notifications = is_array( rgar( $feed['meta'], 'selectedNotifications' ) ) ? rgar( $feed['meta'], 'selectedNotifications' ) : array();
-
-        return isset( $feed['meta']['delayNotification'] ) && in_array( $notification['id'], $selected_notifications ) ? true : $is_disabled;
-    }
-    
     public function plugin_settings_fields()
     {
         return array(
@@ -481,7 +452,6 @@ EOT;
         if ($has_razorpay_feed) {
             $payment_events = array(
                 'complete_payment'          => __('Payment Completed', 'gravityforms'),
-                'fail_payment'              => __('Payment Failed', 'gravityforms'),
             );
 
             return array_merge($notification_events, $payment_events);
