@@ -139,6 +139,12 @@ class GFRazorpay extends GFPaymentAddOn
         return self::$_instance;
     }
 
+    public function init_frontend()
+    {
+        parent::init_frontend();
+        add_action('gform_after_submission', array($this, 'generate_razorpay_order'), 10, 2);
+    }
+
     public function plugin_settings_fields()
     {
         return array(
@@ -421,14 +427,6 @@ EOT;
         );
 
         return $fields;
-    }
-
-    public function redirect_url( $feed, $submission_data, $form, $entry )
-    {
-        //updating lead's payment_status to Processing
-        GFAPI::update_entry_property( $entry['id'], 'payment_status', 'Processing' );
-
-        $this->generate_razorpay_order($entry, $form);
     }
 
     public function init()
