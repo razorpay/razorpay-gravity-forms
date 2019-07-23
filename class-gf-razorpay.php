@@ -433,8 +433,6 @@ EOT;
     {
         add_filter( 'gform_notification_events', array( $this, 'notification_events' ), 10, 2 );
 
-        add_filter( 'gform_post_payment_action', array( $this, 'post_payment_action' ), 10, 2 );
-
         // Supports frontend feeds.
         $this->_supports_frontend_feeds = true;
 
@@ -459,10 +457,4 @@ EOT;
 
     }
 
-    public function post_payment_action($entry, $action)
-    {
-        $form = GFAPI::get_form( $entry['form_id'] );
-
-        GFAPI::send_notifications( $form, $entry, rgar( $action, 'type' ) );
-    }
 }
