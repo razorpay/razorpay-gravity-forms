@@ -457,4 +457,12 @@ EOT;
 
     }
 
+    //Add post payment action after payment success.
+    public function post_payment_action($entry, $action)
+    {
+        $form = GFAPI::get_form( $entry['form_id'] );
+
+        GFAPI::send_notifications( $form, $entry, rgar( $action, 'type' ) );
+    }
+
 }
