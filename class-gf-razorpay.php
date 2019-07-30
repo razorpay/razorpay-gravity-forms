@@ -142,7 +142,6 @@ class GFRazorpay extends GFPaymentAddOn
     public function init_frontend()
     {
         parent::init_frontend();
-
         add_action('gform_after_submission', array($this, 'generate_razorpay_order'), 10, 2);
     }
 
@@ -291,6 +290,7 @@ class GFRazorpay extends GFPaymentAddOn
         }
         else
         {
+
             do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'],
                 $callback_action['amount'], $entry, $feed);
 
@@ -321,6 +321,7 @@ class GFRazorpay extends GFPaymentAddOn
                 'gravity_forms_order_id' => $entry['id']
             ),
             'order_id'    => $entry[self::RAZORPAY_ORDER_ID],
+            'integration' => 'gravityforms',
         );
 
         wp_enqueue_script('razorpay_script',
@@ -427,4 +428,41 @@ EOT;
 
         return $fields;
     }
+
+    public function init()
+    {
+        add_filter( 'gform_notification_events', array( $this, 'notification_events' ), 10, 2 );
+
+        // Supports frontend feeds.
+        $this->_supports_frontend_feeds = true;
+
+        parent::init();
+
+    }
+
+    // Added custom event to provide option to chose event to send notifications.
+    public function notification_events($notification_events, $form)
+    {
+        $has_razorpay_feed = function_exists( 'gf_razorpay' ) ? gf_razorpay()->get_feeds( $form['id'] ) : false;
+
+        if ($has_razorpay_feed) {
+            $payment_events = array(
+                'complete_payment'          => __('Payment Completed', 'gravityforms'),
+            );
+
+            return array_merge($notification_events, $payment_events);
+        }
+
+        return $notification_events;
+
+    }
+
+    //Add post payment action after payment success.
+    public function post_payment_action($entry, $action)
+    {
+        $form = GFAPI::get_form( $entry['form_id'] );
+
+        GFAPI::send_notifications( $form, $entry, rgar( $action, 'type' ) );
+    }
+
 }
