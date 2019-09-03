@@ -1,7 +1,7 @@
 <?php
 
 /*
-Plugin Name: Gravity Forms for Razorpay
+Plugin Name: Grav Forms + Razorpay
 Plugin URI: http://www.gravityforms.com
 Description: Integrates Gravity Forms with Razorpay Payments, enabling end users to purchase goods and services through Gravity Forms.
 Version: 1.0
