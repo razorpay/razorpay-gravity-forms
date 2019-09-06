@@ -380,6 +380,13 @@ EOT;
 
     public function generate_razorpay_order($entry, $form)
     {
+        $feed            = $this->get_payment_feed( $entry );
+        $submission_data = $this->get_submission_data( $feed, $form, $entry );
+
+        //Check if gravity form is executed without any payment
+        if ( ! $feed || empty( $submission_data['payment_amount'] ) ) {
+            return true;
+        }
         //gravity form method to get value of payment_amount key from entry
         $paymentAmount = rgar($entry, 'payment_amount' );
 
