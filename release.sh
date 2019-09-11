@@ -9,7 +9,7 @@ set -euo pipefail
 # Slightly adapted
 
 SVNUSER=razorpay
-PLUGINSLUG='grav-forms-razorpay'
+PLUGINSLUG='razorpay-gravity-forms'
 
 # main config
 CURRENTDIR="$(pwd)/"
@@ -24,11 +24,11 @@ SVNURL="https://plugins.svn.wordpress.org/$PLUGINSLUG"
 
 # Let's begin...
 echo ".........................................."
-echo 
+echo
 echo "Preparing to deploy wordpress plugin"
-echo 
+echo
 echo ".........................................."
-echo 
+echo
 
 # Check version in readme.txt
 RELEASE_VERSION=$(grep "^Stable tag" "$GITPATH/readme.txt" | awk -F' ' '{print $3}')
