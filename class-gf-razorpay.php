@@ -411,18 +411,31 @@ EOT;
             'payment_capture' => 1
         );
 
-        $razorpayOrder = $api->order->create($data);
+        try
+        {
+            $razorpayOrder = $api->order->create($data);
 
-        gform_update_meta($entry['id'], self::RAZORPAY_ORDER_ID, $razorpayOrder['id']);
 
-        $entry[self::RAZORPAY_ORDER_ID] = $razorpayOrder['id'];
+            gform_update_meta($entry['id'], self::RAZORPAY_ORDER_ID, $razorpayOrder['id']);
 
-        GFAPI::update_entry($entry);
+            $entry[self::RAZORPAY_ORDER_ID] = $razorpayOrder['id'];
 
-        setcookie(self::RAZORPAY_ORDER_ID, $entry[self::RAZORPAY_ORDER_ID],
-            time() + self::COOKIE_DURATION, COOKIEPATH, COOKIE_DOMAIN, false, true);
+            GFAPI::update_entry($entry);
 
-        echo $this->generate_razorpay_form($entry, $form);
+            setcookie(self::RAZORPAY_ORDER_ID, $entry[self::RAZORPAY_ORDER_ID],
+                time() + self::COOKIE_DURATION, COOKIEPATH, COOKIE_DOMAIN, false, true);
+
+            echo $this->generate_razorpay_form($entry, $form);
+        }
+        catch (\Exception $e)
+        {
+            do_action('gform_razorpay_fail_payment', $entry, $feed);
+
+            $errorMessage = $e->getMessage();
+
+            echo $errorMessage;
+
+        }
     }
 
     public function billing_info_fields()
