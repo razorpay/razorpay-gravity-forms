@@ -3,7 +3,7 @@ Contributors: razorpay
 Tags: razorpay, payments, india, gravityforms, ecommerce
 Requires at least: 3.9.2
 Tested up to: 5.2.2
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -31,6 +31,16 @@ This is compatible with version greater than 1.9.3 gravity forms.
 
 1. Visit the Gravity Forms settings page, and click on the Razorpay tab.
 2. Add in your Key Id and Key Secret.
+
+== Changelog ==
+
+= 1.1.1 =
+* Handle non payment form submit
+* Handle error if configuration is mismatch.
+
+= 1.1.0 =
+* Add admin notification event to choose email notification after form submit or payment complete
+* Update latest sdk 2.5.0
 
 == Support ==
 
