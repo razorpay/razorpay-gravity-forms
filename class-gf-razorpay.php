@@ -196,9 +196,22 @@ class GFRazorpay extends GFPaymentAddOn
                         'name'   => self::GF_RAZORPAY_ENABLE_WEBHOOK,
                         'type' => 'checkbox',
                         'label' => esc_html__( 'Enable Webhook', $this->_slug ),
-                        'description' => __( 'Enable Razorpay Webhook <a href="https://dashboard.razorpay.com/#/app/webhooks">here</a> with the URL listed below.' ). '<br/>' . __( '<span style="width:300px;font-weight: bold; margin:5px 0;" class="webhook-url">'.$webhookUrl.'</span>
+                        'description' => __( 'Enable Razorpay Webhook <a href="https://dashboard.razorpay.com/#/app/webhooks">here</a> with the URL listed below.' ). '<br/>' . __( '<span style="width:300px;font-weight: bold; margin:5px 0;" class="rzp-webhook-url">'.$webhookUrl.'</span>
+                            <span class="rzp-webhook-to-clipboard" style="background-color: #337ab7; color: white; border: none;cursor: pointer; padding: 2px 4px; text-decoration: none;display: inline-block;"">Copy</span>
                             <br/>Instructions and guide to <a href="https://razorpay.com/docs/webhooks/">Razorpay webhooks</a>
-                            ', $this->_slug ),
+
+                            <script type="text/javascript">
+                                (jQuery)(function() {
+                                    (jQuery)(".rzp-webhook-to-clipboard").click(function() {
+                                        var temp = (jQuery)("<input>");
+                                        (jQuery)("body").append(temp);
+                                        temp.val((jQuery)(".rzp-webhook-url").text()).select();
+                                        document.execCommand("copy");
+                                        temp.remove();
+                                        (jQuery)(".rzp-webhook-to-clipboard").text("Copied");
+                                    });
+                                });
+                            </script>', $this->_slug ),
                         'choices' => array(
                             array(
                                 'name' => self::GF_RAZORPAY_ENABLE_WEBHOOK,
