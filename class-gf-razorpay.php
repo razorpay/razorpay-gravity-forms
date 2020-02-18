@@ -196,8 +196,8 @@ class GFRazorpay extends GFPaymentAddOn
                         'name'   => self::GF_RAZORPAY_ENABLE_WEBHOOK,
                         'type' => 'checkbox',
                         'label' => esc_html__( 'Enable Webhook', $this->_slug ),
-                        'tooltip' => esc_html__( 'Enable Razorpay Webhook <a href="https://dashboard.razorpay.com/#/app/webhooks">here</a> with the URL listed below.' ). '<br/><br/>' . esc_html__( '<span style="width:300px;font-weight: bold;" class="webhook-url"><a href="'.$webhookUrl. '">'.$webhookUrl.'</a></span>
-                            <br/><br/>Instructions and guide to <a href="https://razorpay.com/docs/webhooks/">Razorpay webhooks</a>
+                        'description' => __( 'Enable Razorpay Webhook <a href="https://dashboard.razorpay.com/#/app/webhooks">here</a> with the URL listed below.' ). '<br/>' . __( '<span style="width:300px;font-weight: bold; margin:5px 0;" class="webhook-url">'.$webhookUrl.'</span>
+                            <br/>Instructions and guide to <a href="https://razorpay.com/docs/webhooks/">Razorpay webhooks</a>
                             ', $this->_slug ),
                         'choices' => array(
                             array(
