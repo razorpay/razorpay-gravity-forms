@@ -177,7 +177,7 @@ class GFRazorpay extends GFPaymentAddOn
                     array(
                         'name'   => self::GF_RAZORPAY_PAYMENT_ACTION,
                         'label' => esc_html__('Payment Action', 'razorpay'),
-                        'tooltip' => esc_html__('Payment action on order compelete.', $this->_slug),
+                        'tooltip' => esc_html__('Payment action on order complete.', $this->_slug),
                         'type' => 'select',
                         'size' => 'regular',
                         'default' => self::CAPTURE,

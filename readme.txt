@@ -2,8 +2,8 @@
 Contributors: razorpay
 Tags: razorpay, payments, india, gravityforms, ecommerce
 Requires at least: 3.9.2
-Tested up to: 5.2.2
-Stable tag: 1.1.1
+Tested up to: 5.3.2
+Stable tag: 1.2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -33,6 +33,10 @@ This is compatible with version greater than 1.9.3 gravity forms.
 2. Add in your Key Id and Key Secret.
 
 == Changelog ==
+
+= 1.2.0 =
+* Added Meta-data for internal analysis.
+* Added webhook support for "order.paid".
 
 = 1.1.1 =
 * Handle non payment form submit
