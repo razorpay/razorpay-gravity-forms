@@ -215,7 +215,8 @@ class GFRazorpay extends GFPaymentAddOn
                         'choices' => array(
                             array(
                                 'name' => self::GF_RAZORPAY_ENABLE_WEBHOOK,
-                                'value' => '1'
+                                'value' => '1',
+                                'label' => ''
                             ),
                         )
                     ),
