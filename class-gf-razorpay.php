@@ -14,6 +14,9 @@ class GFRazorpay extends GFPaymentAddOn
      */
     const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
     const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
+    const GF_RAZORPAY_PAYMENT_ACTION       = 'gf_razorpay_payment_action';
+    const GF_RAZORPAY_ENABLE_WEBHOOK       = 'gf_razorpay_enable_webhook';
+    const GF_RAZORPAY_WEBHOOK_SECRET       = 'gf_razorpay_webhook_secret';
 
     /**
      * Razorpay API attributes
@@ -21,6 +24,9 @@ class GFRazorpay extends GFPaymentAddOn
     const RAZORPAY_ORDER_ID                = 'razorpay_order_id';
     const RAZORPAY_PAYMENT_ID              = 'razorpay_payment_id';
     const RAZORPAY_SIGNATURE               = 'razorpay_signature';
+    const CAPTURE                          = 'capture';
+    const AUTHORIZE                        = 'authorize';
+    const ORDER_PAID                       = 'order.paid';
 
     /**
      * Cookie set for one day
@@ -129,6 +135,8 @@ class GFRazorpay extends GFPaymentAddOn
      */
     private static $_instance              = null;
 
+
+
     public static function get_instance()
     {
         if (self::$_instance === null)
@@ -139,6 +147,7 @@ class GFRazorpay extends GFPaymentAddOn
         return self::$_instance;
     }
 
+
     public function init_frontend()
     {
         parent::init_frontend();
@@ -147,9 +156,11 @@ class GFRazorpay extends GFPaymentAddOn
 
     public function plugin_settings_fields()
     {
+        $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
+
         return array(
             array(
-                'title'               => 'razorpay_settings',
+                'title'               => 'Razorpay Settings',
                 'fields'              => array(
                     array(
                         'name'        => self::GF_RAZORPAY_KEY,
@@ -162,6 +173,59 @@ class GFRazorpay extends GFPaymentAddOn
                         'label'       => esc_html__('Razorpay Secret', $this->_slug),
                         'type'        => 'text',
                         'class'       => 'medium',
+                    ),
+                    array(
+                        'name'   => self::GF_RAZORPAY_PAYMENT_ACTION,
+                        'label' => esc_html__('Payment Action', 'razorpay'),
+                        'tooltip' => esc_html__('Payment action on order complete.', $this->_slug),
+                        'type' => 'select',
+                        'size' => 'regular',
+                        'default' => self::CAPTURE,
+                        'choices' => array(
+                            array(
+                                'label' => esc_html__( 'Authorize and Capture', $this->_slug ),
+                                'value' => self::CAPTURE
+                            ),
+                            array(
+                                'label' => esc_html__( 'Authorize', $this->_slug ),
+                                'value' => self::AUTHORIZE
+                            ),
+                        )
+                    ),
+                    array(
+                        'name'   => self::GF_RAZORPAY_ENABLE_WEBHOOK,
+                        'type' => 'checkbox',
+                        'label' => esc_html__( 'Enable Webhook', $this->_slug ),
+                        'description' => __( 'Enable Razorpay Webhook <a href="https://dashboard.razorpay.com/#/app/webhooks">here</a> with the URL listed below.' ). '<br/>' . __( '<span style="width:300px;font-weight: bold; margin:5px 0;" class="rzp-webhook-url">'.$webhookUrl.'</span>
+                            <span class="rzp-webhook-to-clipboard" style="background-color: #337ab7; color: white; border: none;cursor: pointer; padding: 2px 4px; text-decoration: none;display: inline-block;"">Copy</span>
+                            <br/>Instructions and guide to <a href="https://razorpay.com/docs/webhooks/">Razorpay webhooks</a>
+
+                            <script type="text/javascript">
+                                (jQuery)(function() {
+                                    (jQuery)(".rzp-webhook-to-clipboard").click(function() {
+                                        var temp = (jQuery)("<input>");
+                                        (jQuery)("body").append(temp);
+                                        temp.val((jQuery)(".rzp-webhook-url").text()).select();
+                                        document.execCommand("copy");
+                                        temp.remove();
+                                        (jQuery)(".rzp-webhook-to-clipboard").text("Copied");
+                                    });
+                                });
+                            </script>', $this->_slug ),
+                        'choices' => array(
+                            array(
+                                'name' => self::GF_RAZORPAY_ENABLE_WEBHOOK,
+                                'value' => '1',
+                                'label' => ''
+                            ),
+                        )
+                    ),
+                    array(
+                        'name'   => self::GF_RAZORPAY_WEBHOOK_SECRET,
+                        'label' => esc_html__('Webhook Secret', $this->_slug),
+                        'tooltip' => esc_html__('<br/> Webhook secret is used for webhook signature verification. This has to match the one added <a href="https://dashboard.razorpay.com/#/app/webhooks">here</a>', $this->_slug),
+                        'type' => 'text',
+                        'size' => 'regular',
                     ),
                     array(
                         'type'        => 'save',
@@ -227,6 +291,7 @@ class GFRazorpay extends GFPaymentAddOn
             'type'           => 'fail_payment',
             'transaction_id' => $attributes[self::RAZORPAY_PAYMENT_ID],
             'amount'         => $entry['payment_amount'],
+            'payment_method' => 'razorpay',
             'entry_id'       => $entry['id'],
             'error'          => 'Payment Failed',
         );
@@ -320,6 +385,11 @@ class GFRazorpay extends GFPaymentAddOn
             'notes'       => array(
                 'gravity_forms_order_id' => $entry['id']
             ),
+            "_"           => array(
+                'integration'                => "gravityforms",
+                'integration_version'        => GF_RAZORPAY_VERSION,
+                'integration_parent_version' => GFForms::$version
+            ),
             'order_id'    => $entry[self::RAZORPAY_ORDER_ID],
             'integration' => 'gravityforms',
         );
@@ -402,13 +472,15 @@ EOT;
 
         $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
 
+        $payment_action = $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) ?? self::CAPTURE;
+
         $api = new Api($key, $secret);
 
         $data = array(
             'receipt'         => $entry['id'],
             'amount'          => (int) round($paymentAmount * 100),
             'currency'        => $entry['currency'],
-            'payment_capture' => 1
+            'payment_capture' => ($payment_action === self::CAPTURE) ? 1 : 0
         );
 
         try
@@ -483,6 +555,118 @@ EOT;
         $form = GFAPI::get_form( $entry['form_id'] );
 
         GFAPI::send_notifications( $form, $entry, rgar( $action, 'type' ) );
+    }
+
+    /**
+     * [process_webhook to process the razorpay webhook]
+     * @return [type] [description]
+     */
+    public function process_webhook()
+    {
+        $post = file_get_contents('php://input');
+
+        $data = json_decode($post, true);
+
+        if (json_last_error() !== 0)
+        {
+            return;
+        }
+
+        $enabled = $this->get_plugin_setting(self::GF_RAZORPAY_ENABLE_WEBHOOK);
+
+        if (isset($enabled) === true and
+            (empty($data['event']) === false))
+        {
+            if (isset($_SERVER['HTTP_X_RAZORPAY_SIGNATURE']) === true)
+            {
+               $razorpay_webhook_secret = $this->get_plugin_setting(self::GF_RAZORPAY_WEBHOOK_SECRET);
+
+                $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
+
+                $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
+
+                $api = new Api($key, $secret);
+                //
+                // If the webhook secret isn't set on wordpress, return
+                //
+                if (empty($razorpay_webhook_secret) === true)
+                {
+                    return;
+                }
+
+                try
+                {
+                    $api->utility->verifyWebhookSignature($post,
+                                                                $_SERVER['HTTP_X_RAZORPAY_SIGNATURE'],
+                                                                $razorpay_webhook_secret);
+                }
+                catch (Errors\SignatureVerificationError $e)
+                {
+                    $log = array(
+                        'message'   => $e->getMessage(),
+                        'data'      => $data,
+                        'event'     => 'gf.razorpay.signature.verify_failed'
+                    );
+
+                    error_log(json_encode($log));
+                    status_header( 401 );
+                    return;
+                }
+
+                switch ($data['event'])
+                {
+                    case self::ORDER_PAID:
+                        return $this->order_paid($data);
+
+                    default:
+                        return;
+                }
+            }
+        }
+    }
+    /**
+     * [order_paid Consume 'order.paid' webhook payload for order processing]
+     * @param  [array] $data [webhook payload]
+     * @return [type]       [description]
+     */
+    private function order_paid($data)
+    {
+        $entry_id = $data['payload']['payment']['entity']['notes']['gravity_forms_order_id'];
+
+        if(empty($entry_id) === false)
+        {
+            $entry = GFAPI::get_entry($entry_id);
+
+            if(is_array($entry) === true)
+            {
+                $razorpay_payment_id = $data['payload']['payment']['entity']['id'];
+
+                //check the payment status not set
+                if(empty($entry['payment_status']) === true)
+                {
+                    //check for valid amount
+                    $payment_amount = $data['payload']['payment']['entity']['amount'];
+
+                    $order_amount =  (int) round(rgar($entry, 'payment_amount' ) * 100);
+
+                    //if valid amount paid mark the order complete
+                    if($payment_amount === $order_amount)
+                    {
+                        $action = array(
+                            'id'             => $razorpay_payment_id,
+                            'type'           => 'complete_payment',
+                            'transaction_id' => $razorpay_payment_id,
+                            'amount'         => rgar($entry, 'payment_amount' ),
+                            'entry_id'       => $entry_id,
+                            'payment_method' => 'razorpay',
+                            'error'          => null,
+                        );
+
+                        $this->complete_payment($entry, $action );
+                    }
+                }
+            }
+        }
     }
 
 }
