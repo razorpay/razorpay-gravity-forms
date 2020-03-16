@@ -472,7 +472,7 @@ EOT;
 
         $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
 
-        $payment_action = $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) ?? self::CAPTURE;
+        $payment_action = $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) ? $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) : self::CAPTURE;
 
         $api = new Api($key, $secret);
 
