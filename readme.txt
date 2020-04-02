@@ -19,6 +19,7 @@ This is compatible with version greater than 1.9.3 gravity forms.
 
 1. Install the plugin from the [Wordpress Plugin Directory](Need to specify url).
 2. To use this plugin correctly, you need to be able to make network requests. Please make sure that you have the php-curl extension installed.
+3. There are 2 action hooks available corresposding to payment failed and payment success. By using these hooks, corresponding action can be implemanted.
 
 == Dependencies ==
 
