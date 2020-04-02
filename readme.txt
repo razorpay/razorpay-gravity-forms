@@ -21,8 +21,10 @@ This is compatible with version greater than 1.9.3 gravity forms.
 2. To use this plugin correctly, you need to be able to make network requests. Please make sure that you have the php-curl extension installed.
 3. There are 2 action hooks available corresposding to payment failed and payment success. By using these hooks, corresponding action can be implemanted.
 
-	a) gform_razorpay_fail_payment($entry, $feed)
-	b) gform_razorpay_complete_payment($payment_transaction_id,$amount, $entry, $feed)
+	a) gform_razorpay_fail_payment with 2 params ($entry, $feed)
+	b) gform_razorpay_complete_payment with 4 params ($payment_transaction_id,$amount, $entry, $feed)
+
+   Above mentioned hooks can be used to handle the success and failure cases of the payment.
 
 == Dependencies ==
 
