@@ -335,32 +335,69 @@ class GFRazorpay extends GFPaymentAddOn
         );
     }
 
-    public function post_callback($callback_action, $callback_result)
+    public function post_callback($callback_action, $callback_result) 
     {
+        if (is_wp_error( $callback_action ) || ! $callback_action) 
+        {
+            return false;
+        }
+        
         $entry = null;
 
         $feed = null;
 
         if (isset($callback_action['entry_id']) === true)
         {
-            $entry = GFAPI::get_entry($callback_action['entry_id']);
-
-            $feed  = $this->get_payment_feed($entry);
+            $entry          = GFAPI::get_entry($callback_action['entry_id']);
+            $feed           = $this->get_payment_feed($entry);
+            $transaction_id = rgar($callback_action, 'transaction_id');
+            $amount         = rgar($callback_action, 'amount');
+            $status         = rgar($callback_action, 'type');
         }
-        if ($callback_action['type'] === 'fail_payment')
-        {
-            do_action('gform_razorpay_fail_payment', $entry, $feed);
 
-            echo $callback_action['error'];
+        if ($status === 'complete_payment') 
+        {
+          do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'], $callback_action['amount'], $entry, $feed);
         }
         else
         {
+            do_action('gform_razorpay_fail_payment', $entry, $feed);
+        }    
+        ?>
+        <head> <link rel="stylesheet" type="text/css" href="<?php echo plugin_dir_url(__FILE__) .'assets/css/style.css';?>" ><script type="text/javascript" src="<?php echo plugin_dir_url(__FILE__) .'assets/js/script.js'?>" ></script> </head>
+        <body>
+        <div class="invoice-box">
+            <table cellpadding="0" cellspacing="0">
+                <tr class="top">
+                    <td colspan="2">
+                        <table> <tr> <td class="title"> <img src="https://razorpay.com/assets/razorpay-logo.svg" style="width:100%; max-width:300px;"> </td></tr></table>
+                    </td>
+                </tr>
+                <tr class="heading"> <td> Payment Details </td><td> Value </td></tr>
+                <tr class="item"> <td> Status </td><td> <?php echo $status == 'complete_payment'? "Success ✅":"Fail 🚫"; ?> </td></tr>
+                <?php 
+                if($status == 'complete_payment')
+                {
+                ?>
+                <tr class="item"> <td> Transaction Id </td><td> # <?php echo $transaction_id; ?> </td></tr>
+                <?php
+                }else{
+                ?>
+                <tr class="item"> <td> Transaction Error</td><td> <?php echo $callback_action['error']; ?> </td></tr>
+                <?php
+                }
+                ?>
+                <tr class="item"> <td> Transaction Date </td><td> <?php echo date("F j, Y"); ?> </td></tr>
+                <tr class="item last"> <td> Amount </td><td> <?php echo $amount ?> </td></tr>
+            </table>
+            <p style="font-size:17px;text-align:center;">Go back to the <strong><a href="<?php echo wp_get_referer(); ?>">Gravity Form Page</a></strong> </p>
+            <p style="font-size:17px;text-align:center;"><strong>Note:</strong> This page will automatically redirected to the <strong>Referer page</strong> in <span id="rzp_refresh_timer"></span> seconds.</p>
+            <progress style = "margin-left: 40%;" value="0" max="10" id="progressBar"></progress>
+        </div>
+        </body>';
+        <script type="text/javascript">setTimeout(function(){window.location.href="<?php echo wp_get_referer(); ?>"}, 1e3 * rzp_refresh_time), setInterval(function(){rzp_actual_refresh_time > 0 ? (rzp_actual_refresh_time--, document.getElementById("rzp_refresh_timer").innerText=rzp_actual_refresh_time) : clearInterval(rzp_actual_refresh_time)}, 1e3);</script>
+        <?php
 
-            do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'],
-                $callback_action['amount'], $entry, $feed);
-
-            echo ' Payment Successful. You transaction_id is ' . $callback_action['transaction_id'];
-        }
     }
 
     public function generate_razorpay_form($entry, $form)
@@ -426,17 +463,16 @@ class GFRazorpay extends GFPaymentAddOn
     <input type='hidden' name='razorpay_payment_id' id='razorpay_payment_id'>
     <input type='hidden' name='razorpay_signature'  id='razorpay_signature' >
 </form>
-<p id='msg-razorpay-success'  style='display:none'>
-    Please wait while we are processing your payment.
+<p id='msg-razorpay-success'  style='display:none; text-align:center'>
+    <h3 style='text-align:center'>Please wait while we are processing your payment.</h3>
 </p>
 <p>
-    <button id='btn-razorpay'>Pay With Razorpay</button>
-    <button id='btn-razorpay-cancel' onclick='document.razorpayform.submit()'>Cancel</button>
+    <button id='btn-razorpay' style='display:none'>Pay With Razorpay</button>
+    <button id='btn-razorpay-cancel' style='display:none' onclick='document.razorpayform.submit()'>Cancel</button>
 </p>
 EOT;
         return $html;
     }
-
     public function is_callback_valid()
     {
         // Will check if the return url is valid
