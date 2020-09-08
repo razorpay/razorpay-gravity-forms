@@ -355,6 +355,9 @@ class GFRazorpay extends GFPaymentAddOn
             $status         = rgar($callback_action, 'type');
         }
 
+        $ref_id    = url_to_postid(wp_get_referer());
+        $ref_title = $ref_id > 0 ? get_the_title($ref_id): "Gravity Form Page";
+
         if ($status === 'complete_payment') 
         {
           do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'], $callback_action['amount'], $entry, $feed);
@@ -390,8 +393,8 @@ class GFRazorpay extends GFPaymentAddOn
                 <tr class="item"> <td> Transaction Date </td><td> <?php echo date("F j, Y"); ?> </td></tr>
                 <tr class="item last"> <td> Amount </td><td> <?php echo $amount ?> </td></tr>
             </table>
-            <p style="font-size:17px;text-align:center;">Go back to the <strong><a href="<?php echo wp_get_referer(); ?>">Form Page</a></strong> </p>
-            <p style="font-size:17px;text-align:center;"><strong>Note:</strong> This page will automatically redirected to the <strong>Referrer page</strong> in <span id="rzp_refresh_timer"></span> seconds.</p>
+            <p style="font-size:17px;text-align:center;">Go back to the <strong><a href="<?php echo wp_get_referer(); ?>"><?php echo $ref_title; ?></a></strong> </p>
+            <p style="font-size:17px;text-align:center;"><strong>Note:</strong> This page will automatically redirected to the <strong><?php echo $ref_title; ?></strong> in <span id="rzp_refresh_timer"></span> seconds.</p>
             <progress style = "margin-left: 40%;" value="0" max="10" id="progressBar"></progress>
         </div>
         </body>';
