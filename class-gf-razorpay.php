@@ -410,28 +410,31 @@ class GFRazorpay extends GFPaymentAddOn
         $customerFields = $this->get_customer_fields($form, $feed, $entry);
 
         $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
-
+        
+        $callbackUrl = esc_url(site_url()) . '/?page=gf_razorpay_callback';
+        
         $razorpayArgs = array(
-            'key'         => $key,
-            'name'        => get_bloginfo('name'),
-            'amount'      => (int) round($entry['payment_amount'] * 100),
-            'currency'    => $entry['currency'],
-            'description' => $form['description'],
-            'prefill'     => array(
-                'name'    => $customerFields[self::CUSTOMER_FIELDS_NAME],
-                'email'   => $customerFields[self::CUSTOMER_FIELDS_EMAIL],
-                'contact' => $customerFields[self::CUSTOMER_FIELDS_CONTACT],
+            'key'           => $key,
+            'name'          => get_bloginfo('name'),
+            'amount'        => (int) round($entry['payment_amount'] * 100),
+            'currency'      => $entry['currency'],
+            'description'   => $form['description'],
+            'prefill'       => array(
+                'name'      => $customerFields[self::CUSTOMER_FIELDS_NAME],
+                'email'     => $customerFields[self::CUSTOMER_FIELDS_EMAIL],
+                'contact'   => $customerFields[self::CUSTOMER_FIELDS_CONTACT],
             ),
-            'notes'       => array(
+            'notes'         => array(
                 'gravity_forms_order_id' => $entry['id']
             ),
-            "_"           => array(
+            "_"             => array(
                 'integration'                => "gravityforms",
                 'integration_version'        => GF_RAZORPAY_VERSION,
                 'integration_parent_version' => GFForms::$version
             ),
-            'order_id'    => $entry[self::RAZORPAY_ORDER_ID],
-            'integration' => 'gravityforms',
+            'order_id'      => $entry[self::RAZORPAY_ORDER_ID],
+            'callback_url'  => $callbackUrl,
+            'integration'   => 'gravityforms',
         );
 
         wp_enqueue_script('razorpay_script',
