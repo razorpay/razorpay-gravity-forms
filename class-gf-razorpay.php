@@ -346,6 +346,10 @@ class GFRazorpay extends GFPaymentAddOn
 
         $feed = null;
 
+        $ref_id    = url_to_postid(wp_get_referer());
+        $ref_title = $ref_id > 0 ? get_the_title($ref_id): "Home";
+        $ref_url   = get_home_url();
+
         if (isset($callback_action['entry_id']) === true)
         {
             $entry          = GFAPI::get_entry($callback_action['entry_id']);
@@ -353,10 +357,8 @@ class GFRazorpay extends GFPaymentAddOn
             $transaction_id = rgar($callback_action, 'transaction_id');
             $amount         = rgar($callback_action, 'amount');
             $status         = rgar($callback_action, 'type');
+            $ref_url        = $entry['source_url'];
         }
-
-        $ref_id    = url_to_postid(wp_get_referer());
-        $ref_title = $ref_id > 0 ? get_the_title($ref_id): "Home";
 
         if ($status === 'complete_payment') 
         {
@@ -393,12 +395,12 @@ class GFRazorpay extends GFPaymentAddOn
                 <tr class="item"> <td> Transaction Date </td><td> <?php echo date("F j, Y"); ?> </td></tr>
                 <tr class="item last"> <td> Amount </td><td> <?php echo $amount ?> </td></tr>
             </table>
-            <p style="font-size:17px;text-align:center;">Go back to the <strong><a href="<?php echo wp_get_referer(); ?>"><?php echo $ref_title; ?></a></strong> page. </p>
+            <p style="font-size:17px;text-align:center;">Go back to the <strong><a href="<?php echo $ref_url; ?>"><?php echo $ref_title; ?></a></strong> page. </p>
             <p style="font-size:17px;text-align:center;"><strong>Note:</strong> This page will automatically redirected to the <strong><?php echo $ref_title; ?></strong> page in <span id="rzp_refresh_timer"></span> seconds.</p>
             <progress style = "margin-left: 40%;" value="0" max="10" id="progressBar"></progress>
         </div>
         </body>';
-        <script type="text/javascript">setTimeout(function(){window.location.href="<?php echo wp_get_referer(); ?>"}, 1e3 * rzp_refresh_time), setInterval(function(){rzp_actual_refresh_time > 0 ? (rzp_actual_refresh_time--, document.getElementById("rzp_refresh_timer").innerText=rzp_actual_refresh_time) : clearInterval(rzp_actual_refresh_time)}, 1e3);</script>
+        <script type="text/javascript">setTimeout(function(){window.location.href="<?php echo $ref_url; ?>"}, 1e3 * rzp_refresh_time), setInterval(function(){rzp_actual_refresh_time > 0 ? (rzp_actual_refresh_time--, document.getElementById("rzp_refresh_timer").innerText=rzp_actual_refresh_time) : clearInterval(rzp_actual_refresh_time)}, 1e3);</script>
         <?php
 
     }
