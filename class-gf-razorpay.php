@@ -413,14 +413,14 @@ class GFRazorpay extends GFPaymentAddOn
                 <tr class="item last"> <td> Amount </td><td> <?php echo $amount ?> </td></tr>
             </table>
             <p style="font-size:17px;text-align:center;">Go back to the <strong><a href="<?php echo $ref_url; ?>"><?php echo $ref_title; ?></a></strong> page. </p>
-            <p style="font-size:17px;text-align:center;"><strong>Note:</strong> This page will automatically redirected to the <strong><?php echo $ref_title; ?></strong> page in <span id="rzp_refresh_timer"></span> seconds.</p>
-            <progress style = "margin-left: 40%;" value="0" max="10" id="progressBar"></progress>
+            <!-- <p style="font-size:17px;text-align:center;"><strong>Note:</strong> This page will automatically redirected to the <strong><?php echo $ref_title; ?></strong> page in <span id="rzp_refresh_timer"></span> seconds.</p> -->
+            <!-- <progress style = "margin-left: 40%;" value="0" max="10" id="progressBar"></progress> -->
             <div style="margin-left:22%; margin-top: 20px;">
                 <?php echo $confirmation; ?>
             </div>
         </div>
         </body>';
-        <script type="text/javascript">setTimeout(function(){window.location.href="<?php echo $ref_url; ?>"}, 1e3 * rzp_refresh_time), setInterval(function(){rzp_actual_refresh_time > 0 ? (rzp_actual_refresh_time--, document.getElementById("rzp_refresh_timer").innerText=rzp_actual_refresh_time) : clearInterval(rzp_actual_refresh_time)}, 1e3);</script>
+        <!-- <script type="text/javascript">setTimeout(function(){window.location.href="<?php echo $ref_url; ?>"}, 1e3 * rzp_refresh_time), setInterval(function(){rzp_actual_refresh_time > 0 ? (rzp_actual_refresh_time--, document.getElementById("rzp_refresh_timer").innerText=rzp_actual_refresh_time) : clearInterval(rzp_actual_refresh_time)}, 1e3);</script> -->
         <?php
 
     }
