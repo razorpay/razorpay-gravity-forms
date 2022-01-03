@@ -346,6 +346,11 @@ class GFRazorpay extends GFPaymentAddOn
 
         $feed = null;
 
+        $ref_id    = url_to_postid(wp_get_referer());
+        $ref_title = $ref_id > 0 ? get_the_title($ref_id): "Home";
+        $ref_url   = get_home_url();
+        $form_id   = 0;
+
         if (isset($callback_action['entry_id']) === true)
         {
             $entry          = GFAPI::get_entry($callback_action['entry_id']);
@@ -353,10 +358,9 @@ class GFRazorpay extends GFPaymentAddOn
             $transaction_id = rgar($callback_action, 'transaction_id');
             $amount         = rgar($callback_action, 'amount');
             $status         = rgar($callback_action, 'type');
+            $ref_url        = $entry['source_url'];
+            $form_id        = $entry['form_id'];
         }
-
-        $ref_id    = url_to_postid(wp_get_referer());
-        $ref_title = $ref_id > 0 ? get_the_title($ref_id): "Home";
 
         if ($status === 'complete_payment') 
         {
@@ -365,7 +369,21 @@ class GFRazorpay extends GFPaymentAddOn
         else
         {
             do_action('gform_razorpay_fail_payment', $entry, $feed);
-        }    
+        } 
+
+        $form = GFAPI::get_form($form_id);
+
+        if ( ! class_exists( 'GFFormDisplay' ) ) {
+            require_once( GFCommon::get_base_path() . '/form_display.php' );
+        }
+
+        $confirmation = GFFormDisplay::handle_confirmation( $form, $entry, false );
+
+        if ( is_array( $confirmation ) && isset( $confirmation['redirect'] ) ) {
+            header( "Location: {$confirmation['redirect']}" );
+            exit;
+        }
+
         ?>
         <head> <link rel="stylesheet" type="text/css" href="<?php echo plugin_dir_url(__FILE__) .'assets/css/style.css';?>" ><script type="text/javascript" src="<?php echo plugin_dir_url(__FILE__) .'assets/js/script.js'?>" ></script> </head>
         <body>
@@ -373,7 +391,8 @@ class GFRazorpay extends GFPaymentAddOn
             <table cellpadding="0" cellspacing="0">
                 <tr class="top">
                     <td colspan="2">
-                        <table> <tr> <td class="title"> <img src="https://razorpay.com/assets/razorpay-logo.svg" style="width:100%; max-width:300px;"> </td></tr></table>
+                        <table> <tr> <td class="title"> <img src="https://razorpay.com/assets/razorpay-logo.svg" style="width:100%; max-width:300px;margin-left:30%"> </td>
+                        </tr></table>
                     </td>
                 </tr>
                 <tr class="heading"> <td> Payment Details </td><td> Value </td></tr>
@@ -393,12 +412,15 @@ class GFRazorpay extends GFPaymentAddOn
                 <tr class="item"> <td> Transaction Date </td><td> <?php echo date("F j, Y"); ?> </td></tr>
                 <tr class="item last"> <td> Amount </td><td> <?php echo $amount ?> </td></tr>
             </table>
-            <p style="font-size:17px;text-align:center;">Go back to the <strong><a href="<?php echo wp_get_referer(); ?>"><?php echo $ref_title; ?></a></strong> page. </p>
-            <p style="font-size:17px;text-align:center;"><strong>Note:</strong> This page will automatically redirected to the <strong><?php echo $ref_title; ?></strong> page in <span id="rzp_refresh_timer"></span> seconds.</p>
-            <progress style = "margin-left: 40%;" value="0" max="10" id="progressBar"></progress>
+            <p style="font-size:17px;text-align:center;">Go back to the <strong><a href="<?php echo $ref_url; ?>"><?php echo $ref_title; ?></a></strong> page. </p>
+            <!-- <p style="font-size:17px;text-align:center;"><strong>Note:</strong> This page will automatically redirected to the <strong><?php echo $ref_title; ?></strong> page in <span id="rzp_refresh_timer"></span> seconds.</p> -->
+            <!-- <progress style = "margin-left: 40%;" value="0" max="10" id="progressBar"></progress> -->
+            <div style="margin-left:22%; margin-top: 20px;">
+                <?php echo $confirmation; ?>
+            </div>
         </div>
         </body>';
-        <script type="text/javascript">setTimeout(function(){window.location.href="<?php echo wp_get_referer(); ?>"}, 1e3 * rzp_refresh_time), setInterval(function(){rzp_actual_refresh_time > 0 ? (rzp_actual_refresh_time--, document.getElementById("rzp_refresh_timer").innerText=rzp_actual_refresh_time) : clearInterval(rzp_actual_refresh_time)}, 1e3);</script>
+        <!-- <script type="text/javascript">setTimeout(function(){window.location.href="<?php echo $ref_url; ?>"}, 1e3 * rzp_refresh_time), setInterval(function(){rzp_actual_refresh_time > 0 ? (rzp_actual_refresh_time--, document.getElementById("rzp_refresh_timer").innerText=rzp_actual_refresh_time) : clearInterval(rzp_actual_refresh_time)}, 1e3);</script> -->
         <?php
 
     }
@@ -410,28 +432,31 @@ class GFRazorpay extends GFPaymentAddOn
         $customerFields = $this->get_customer_fields($form, $feed, $entry);
 
         $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
-
+        
+        $callbackUrl = esc_url(site_url()) . '/?page=gf_razorpay_callback';
+        
         $razorpayArgs = array(
-            'key'         => $key,
-            'name'        => get_bloginfo('name'),
-            'amount'      => (int) round($entry['payment_amount'] * 100),
-            'currency'    => $entry['currency'],
-            'description' => $form['description'],
-            'prefill'     => array(
-                'name'    => $customerFields[self::CUSTOMER_FIELDS_NAME],
-                'email'   => $customerFields[self::CUSTOMER_FIELDS_EMAIL],
-                'contact' => $customerFields[self::CUSTOMER_FIELDS_CONTACT],
+            'key'           => $key,
+            'name'          => get_bloginfo('name'),
+            'amount'        => (int) round($entry['payment_amount'] * 100),
+            'currency'      => $entry['currency'],
+            'description'   => $form['description'],
+            'prefill'       => array(
+                'name'      => $customerFields[self::CUSTOMER_FIELDS_NAME],
+                'email'     => $customerFields[self::CUSTOMER_FIELDS_EMAIL],
+                'contact'   => $customerFields[self::CUSTOMER_FIELDS_CONTACT],
             ),
-            'notes'       => array(
+            'notes'         => array(
                 'gravity_forms_order_id' => $entry['id']
             ),
-            "_"           => array(
+            "_"             => array(
                 'integration'                => "gravityforms",
                 'integration_version'        => GF_RAZORPAY_VERSION,
                 'integration_parent_version' => GFForms::$version
             ),
-            'order_id'    => $entry[self::RAZORPAY_ORDER_ID],
-            'integration' => 'gravityforms',
+            'order_id'      => $entry[self::RAZORPAY_ORDER_ID],
+            'callback_url'  => $callbackUrl,
+            'integration'   => 'gravityforms',
         );
 
         wp_enqueue_script('razorpay_script',
