@@ -40,6 +40,11 @@ This is compatible with version greater than 1.9.3 gravity forms.
 
 == Changelog ==
 
+= 1.3.1 =
+* Update latest sdk 2.8.1
+* Added confirmation message in callback page.
+* Removed auto redirect.
+
 = 1.3.0 =
 * Handle the redirection page after payment.
 
