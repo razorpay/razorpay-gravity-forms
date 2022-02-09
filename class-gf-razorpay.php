@@ -335,13 +335,13 @@ class GFRazorpay extends GFPaymentAddOn
         );
     }
 
-    public function post_callback($callback_action, $callback_result) 
+    public function post_callback($callback_action, $callback_result)
     {
-        if (is_wp_error( $callback_action ) || ! $callback_action) 
+        if (is_wp_error( $callback_action ) || ! $callback_action)
         {
             return false;
         }
-        
+
         $entry = null;
 
         $feed = null;
@@ -362,14 +362,14 @@ class GFRazorpay extends GFPaymentAddOn
             $form_id        = $entry['form_id'];
         }
 
-        if ($status === 'complete_payment') 
+        if ($status === 'complete_payment')
         {
           do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'], $callback_action['amount'], $entry, $feed);
         }
         else
         {
             do_action('gform_razorpay_fail_payment', $entry, $feed);
-        } 
+        }
 
         $form = GFAPI::get_form($form_id);
 
@@ -380,7 +380,7 @@ class GFRazorpay extends GFPaymentAddOn
         $confirmation = GFFormDisplay::handle_confirmation( $form, $entry, false );
 
         if ( is_array( $confirmation ) && isset( $confirmation['redirect'] ) ) {
-            header( "Location: {$confirmation['redirect']}" );
+            header( "Location: {$confirmation['redirect']}" );                      // nosemgrep : php.lang.security.non-literal-header.non-literal-header
             exit;
         }
 
@@ -397,7 +397,7 @@ class GFRazorpay extends GFPaymentAddOn
                 </tr>
                 <tr class="heading"> <td> Payment Details </td><td> Value </td></tr>
                 <tr class="item"> <td> Status </td><td> <?php echo $status == 'complete_payment'? "Success ✅":"Fail 🚫"; ?> </td></tr>
-                <?php 
+                <?php
                 if($status == 'complete_payment')
                 {
                 ?>
@@ -432,9 +432,9 @@ class GFRazorpay extends GFPaymentAddOn
         $customerFields = $this->get_customer_fields($form, $feed, $entry);
 
         $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
-        
+
         $callbackUrl = esc_url(site_url()) . '/?page=gf_razorpay_callback';
-        
+
         $razorpayArgs = array(
             'key'           => $key,
             'name'          => get_bloginfo('name'),
