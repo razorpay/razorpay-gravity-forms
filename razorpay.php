@@ -66,3 +66,12 @@ function gf_razorpay_webhook_init()
 
     $gf_razorpay->process_webhook();
 }
+
+function get_data() {
+
+    $gf_razorpay = gf_razorpay();
+
+    $gf_razorpay->auto_enable_webhook();
+     
+   wp_die(); 
+}
