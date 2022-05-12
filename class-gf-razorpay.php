@@ -136,11 +136,11 @@ class GFRazorpay extends GFPaymentAddOn
     private static $_instance              = null;
 
     protected $supportedWebhookEvents         = array(
-
-        'payment.authorized' => true
-
+        'payment.authorized'
     );
-
+    protected $defaultWebhookEvents = array(
+        'payment.authorized' => true
+    );
 
     public static function get_instance()
     {
@@ -567,8 +567,13 @@ EOT;
 
     public function init()
     {
+        wp_register_script('rzp', plugin_dir_url(__FILE__)  . 'assets/js/custom.js', null, null);
+        wp_enqueue_script('rzp');
+
         add_filter( 'gform_notification_events', array( $this, 'notification_events' ), 10, 2 );
 
+        add_action( 'wp_ajax_get_data', 'get_data' );
+        add_action( 'wp_ajax_nopriv_get_data', 'get_data' );
         // Supports frontend feeds.
         $this->_supports_frontend_feeds = true;
 
@@ -578,30 +583,16 @@ EOT;
 
     public function auto_enable_webhook()
     {
-
-       
             $webhookExist = false;
             $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
             $enabled = true;
-            $defaultEventsData = [
-                'payment.authorized' => 1
-            ];
             $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
             $secret = substr(str_shuffle($alphanumericString), 0, 20);
-        
-            $data = [
-                'url'    => $webhookUrl,
-                'active' => $enabled,
-                'events' => $defaultEventsData,
-                'secret' => $secret,
-            ];
             $getWebhookFlag =  get_option('gf_webhook_enable_flag');
-            $timeNow = new DateTime('now');
-            $time =  $timeNow->getTimestamp();
+            $time = time();
 
-            if(empty($getWebhookFlag))
+            if (empty($getWebhookFlag))
             {
-
                 add_option('gf_webhook_enable_flag', $time);
             }
             else
@@ -609,41 +600,56 @@ EOT;
                 update_option('gf_webhook_enable_flag', $time);
             }
           
-            $webhook = $this->webhookAPI("GET", "webhooks");
-           
-            if(count($webhook) > 0)
-            {
-                foreach ($webhook['items'] as $key => $value)
+            $skip = 0;
+            $count = 10;
+            $webhookItems= [];
+
+            do {
+                $webhook = $this->webhookAPI("GET", "webhooks?count=".$count."&skip=".$skip);
+                $skip += 10;
+                if ($webhook['count'] > 0)
                 {
-                  
-                    if($value['url'] === $webhookUrl)
-                    {    
-                        $newEvents = [];
-                        foreach($value['events'] as $evntkey => $evntval)
+                    foreach ($webhook['items'] as $key => $value)
+                    {
+                        $webhookItems[] = $value;
+                    }
+                }  
+            } while ( $webhook['count'] >= 1);
+            
+            $data = [
+                'url'    => $webhookUrl,
+                'active' => $enabled,
+                'events' => $this->defaultWebhookEvents,
+                'secret' => $secret,
+            ];
+            
+            if (count($webhookItems) > 0)
+            { 
+                foreach ($webhookItems as $key => $value)
+                {
+                    if ($value['url'] === $webhookUrl)
+                    { 
+                        foreach ($value['events'] as $evntkey => $evntval)
                         {
-                           
-                            if($evntval == 1)
+                            if (($evntval == 1) and  
+                                (in_array($evntkey, $this->supportedWebhookEvents) === true))
                             {
-                                 $newEvents[$evntkey] =  $evntval;
+                                 $this->defaultWebhookEvents[$evntkey] =  true;
                             }
-                            
-                        } 
-                        $eventsdata = array_intersect($this->supportedWebhookEvents, $newEvents);
+                        }
                         
                         $data = [
                             'url'    => $webhookUrl,
                             'active' => $enabled,
-                            'events' => $eventsdata,
+                            'events' => $this->defaultWebhookEvents,
                             'secret' => $secret,
                         ];
                         $webhookExist  = true;
                         $webhookId     = $value['id'];
                     }
-                   
-                }    
-            }
-
-            if($webhookExist)
+                }
+            }    
+            if ($webhookExist)
             {
                 $this->webhookAPI('PUT', "webhooks/".$webhookId, $data);
             }
@@ -651,8 +657,7 @@ EOT;
             {
                 $this->webhookAPI('POST', "webhooks/", $data);
             }
-           
-       
+
        
     }
 
