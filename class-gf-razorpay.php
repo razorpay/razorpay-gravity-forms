@@ -15,7 +15,6 @@ class GFRazorpay extends GFPaymentAddOn
     const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
     const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
     const GF_RAZORPAY_PAYMENT_ACTION       = 'gf_razorpay_payment_action';
-    const GF_RAZORPAY_ENABLE_WEBHOOK       = 'gf_razorpay_enable_webhook';
     const GF_RAZORPAY_WEBHOOK_SECRET       = 'gf_razorpay_webhook_secret';
 
     /**
@@ -398,13 +397,20 @@ class GFRazorpay extends GFPaymentAddOn
     public function generate_razorpay_form($entry, $form)
     {
         $getWebhookFlag =  (int)get_option('gf_webhook_enable_flag');
-    
-        if(!empty($getWebhookFlag)){
+        $time = time();
+        if (!empty($getWebhookFlag))
+        {
             
-             if($getWebhookFlag + 86400 < time()){
+             if ($getWebhookFlag + 86400 < time())
+             {
                 
                  $this->auto_enable_webhook(); 
              }
+        }
+        else
+        {
+            update_option('gf_webhook_enable_flag', $time);
+            $this->auto_enable_webhook(); 
         }
 
         $feed = $this->get_payment_feed($entry, $form);
@@ -732,10 +738,7 @@ EOT;
             return;
         }
 
-        $enabled = $this->get_plugin_setting(self::GF_RAZORPAY_ENABLE_WEBHOOK);
-
-        if (isset($enabled) === true and
-            (empty($data['event']) === false))
+        if (empty($data['event']) === false)
         {
             if (isset($_SERVER['HTTP_X_RAZORPAY_SIGNATURE']) === true)
             {
