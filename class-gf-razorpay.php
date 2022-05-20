@@ -133,7 +133,7 @@ class GFRazorpay extends GFPaymentAddOn
      */
     private static $_instance              = null;
 
-    protected $supportedWebhookEvents         = array(
+    protected $supportedWebhookEvents  = array(
         'payment.authorized'
     );
     protected $defaultWebhookEvents = array(
@@ -585,7 +585,7 @@ EOT;
     }
 
     public function auto_enable_webhook()
-    {
+    { 
             $webhookExist = false;
             $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
             $enabled = true;
@@ -614,14 +614,23 @@ EOT;
                 if ($webhook['count'] > 0)
                 {
                     foreach ($webhook['items'] as $key => $value)
-                    {
+                    {  
                         if ($value['url'] === $webhookUrl)
                         { 
-                            $webhookItems[] = $value;
+                            foreach ($value['events'] as $evntkey => $evntval)
+                            {
+                                if (($evntval == 1) and  
+                                    (in_array($evntkey, $this->supportedWebhookEvents) === true))
+                                {
+                                    $this->defaultWebhookEvents[$evntkey] =  true;
+                                }
+                            }
+                            $webhookExist  = true;
+                            $webhookId     = $value['id'];
                         }    
                     }
                 }  
-            } while ( $webhook['count'] >= 1);
+            } while ( $webhook['count'] >= 10);
             
             $data = [
                 'url'    => $webhookUrl,
@@ -629,33 +638,7 @@ EOT;
                 'events' => $this->defaultWebhookEvents,
                 'secret' => $secret,
             ];
-            
-            if (count($webhookItems) > 0)
-            { 
-                foreach ($webhookItems as $key => $value)
-                {
-                    if ($value['url'] === $webhookUrl)
-                    { 
-                        foreach ($value['events'] as $evntkey => $evntval)
-                        {
-                            if (($evntval == 1) and  
-                                (in_array($evntkey, $this->supportedWebhookEvents) === true))
-                            {
-                                 $this->defaultWebhookEvents[$evntkey] =  true;
-                            }
-                        }
-                        
-                        $data = [
-                            'url'    => $webhookUrl,
-                            'active' => $enabled,
-                            'events' => $this->defaultWebhookEvents,
-                            'secret' => $secret,
-                        ];
-                        $webhookExist  = true;
-                        $webhookId     = $value['id'];
-                    }
-                }
-            }    
+  
             if ($webhookExist)
             {
                 $this->webhookAPI('PUT', "webhooks/".$webhookId, $data);

@@ -73,5 +73,5 @@ function get_data() {
 
     $gf_razorpay->auto_enable_webhook();
      
-   wp_die(); 
+    wp_die(); 
 }
