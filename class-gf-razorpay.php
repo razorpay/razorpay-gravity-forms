@@ -15,7 +15,6 @@ class GFRazorpay extends GFPaymentAddOn
     const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
     const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
     const GF_RAZORPAY_PAYMENT_ACTION       = 'gf_razorpay_payment_action';
-    const GF_RAZORPAY_WEBHOOK_SECRET       = 'gf_razorpay_webhook_secret';
 
     /**
      * Razorpay API attributes
@@ -400,7 +399,6 @@ class GFRazorpay extends GFPaymentAddOn
         $time = time();
         if (!empty($getWebhookFlag))
         {
-            
              if ($getWebhookFlag + 86400 < time())
              {
                 
@@ -594,6 +592,7 @@ EOT;
             $enabled = true;
             $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
             $secret = substr(str_shuffle($alphanumericString), 0, 20);
+            update_option('rzp_webhook_secret', $secret);
             $getWebhookFlag =  get_option('gf_webhook_enable_flag');
             $time = time();
 
@@ -742,7 +741,7 @@ EOT;
         {
             if (isset($_SERVER['HTTP_X_RAZORPAY_SIGNATURE']) === true)
             {
-               $razorpay_webhook_secret = $this->get_plugin_setting(self::GF_RAZORPAY_WEBHOOK_SECRET);
+               $razorpay_webhook_secret =  get_option('rzp_webhook_secret');
 
                 $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
