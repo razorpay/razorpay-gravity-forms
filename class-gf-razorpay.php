@@ -401,7 +401,6 @@ class GFRazorpay extends GFPaymentAddOn
         {
              if ($getWebhookFlag + 86400 < time())
              {
-                
                  $this->auto_enable_webhook(); 
              }
         }
@@ -616,7 +615,10 @@ EOT;
                 {
                     foreach ($webhook['items'] as $key => $value)
                     {
-                        $webhookItems[] = $value;
+                        if ($value['url'] === $webhookUrl)
+                        { 
+                            $webhookItems[] = $value;
+                        }    
                     }
                 }  
             } while ( $webhook['count'] >= 1);
@@ -662,8 +664,6 @@ EOT;
             {
                 $this->webhookAPI('POST', "webhooks/", $data);
             }
-
-       
     }
 
     protected function webhookAPI($method, $url, $data = array())
@@ -694,7 +694,7 @@ EOT;
 
         $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
     
-        return new Api($key,$secret);
+        return new Api($key, $secret);
     }
 
     // Added custom event to provide option to chose event to send notifications.

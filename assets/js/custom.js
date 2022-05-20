@@ -1,5 +1,3 @@
-
-
 (jQuery)(function() {
    
     $ = (jQuery);
@@ -18,7 +16,6 @@
      
              },
                  success: function(response) {
-     
                       console.log(response);
                     }   
             });
