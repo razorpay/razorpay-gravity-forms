@@ -137,6 +137,7 @@ class GFRazorpay extends GFPaymentAddOn
     protected $supportedWebhookEvents  = array(
         'order.paid'
     );
+
     protected $defaultWebhookEvents = array(
         'order.paid' => true
     );
@@ -589,7 +590,8 @@ EOT;
     }
 
     public function init()
-    {
+    {   
+        wp_enqueue_script('jquery');
         wp_register_script('rzp', plugin_dir_url(__FILE__)  . 'assets/js/custom.js', null, null);
         wp_enqueue_script('rzp');
 
@@ -606,7 +608,6 @@ EOT;
 
     public function auto_enable_webhook($webhookSecret)
     { 
-        
         $webhookExist = false;
         $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
         $enabled = true;
@@ -743,7 +744,7 @@ EOT;
         {
             if (isset($_SERVER['HTTP_X_RAZORPAY_SIGNATURE']) === true)
             {
-               $razorpay_webhook_secret =  $this->get_plugin_setting(self::GF_RAZORPAY_WEBHOOK_SECRET);
+               $razorpay_webhook_secret = $this->get_plugin_setting(self::GF_RAZORPAY_WEBHOOK_SECRET);
 
                 $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
