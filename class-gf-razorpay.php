@@ -646,7 +646,7 @@ EOT;
                         }
                         $webhookExist  = true;
                         $webhookId     = $value['id'];
-                        return;
+                        break;
                     }    
                 }
             }  
