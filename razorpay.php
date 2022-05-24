@@ -69,9 +69,9 @@ function gf_razorpay_webhook_init()
 
 function get_data() {
 
+    $webhookSecret = $_REQUEST['webhook_secret'];
     $gf_razorpay = gf_razorpay();
-
-    $gf_razorpay->auto_enable_webhook();
+    $gf_razorpay->auto_enable_webhook($webhookSecret);
      
     wp_die(); 
 }

@@ -15,6 +15,7 @@ class GFRazorpay extends GFPaymentAddOn
     const GF_RAZORPAY_KEY                  = 'gf_razorpay_key';
     const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
     const GF_RAZORPAY_PAYMENT_ACTION       = 'gf_razorpay_payment_action';
+    const GF_RAZORPAY_WEBHOOK_SECRET       = 'gf_razorpay_webhook_secret';
 
     /**
      * Razorpay API attributes
@@ -175,6 +176,12 @@ class GFRazorpay extends GFPaymentAddOn
                         'name'        => self::GF_RAZORPAY_SECRET,
                         'label'       => esc_html__('Razorpay Secret', $this->_slug),
                         'type'        => 'text',
+                        'class'       => 'medium',
+                    ),
+                    array(
+                        'name'        => self::GF_RAZORPAY_WEBHOOK_SECRET,
+                        'label'       => esc_html__('Razorpay Webhook Secret', $this->_slug),
+                        'type'        => 'hidden',
                         'class'       => 'medium',
                     ),
                     array(
@@ -398,17 +405,29 @@ class GFRazorpay extends GFPaymentAddOn
         $getWebhookFlag =  (int)get_option('gf_webhook_enable_flag');
         $time = time();
 
-        if (!empty($getWebhookFlag))
+        $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
+        $secret = substr(str_shuffle($alphanumericString), 0, 20);
+        $payment_action = $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) ? $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) : self::CAPTURE;
+        $data = [
+            'gf_razorpay_key' => $this->get_plugin_setting(self::GF_RAZORPAY_KEY),
+            'gf_razorpay_secret' => $this->get_plugin_setting(self::GF_RAZORPAY_SECRET),
+            'gf_razorpay_webhook_secret' => $secret,
+            'gf_razorpay_payment_action' => $payment_action
+        ];
+        
+        $this->update_plugin_settings($data);
+        
+        if (empty($getWebhookFlag) == true)
         {
              if ($getWebhookFlag + 86400 < time())
              {
-                 $this->auto_enable_webhook(); 
+                 $this->auto_enable_webhook($secret);
              }
         }
         else
         {
             update_option('gf_webhook_enable_flag', $time);
-            $this->auto_enable_webhook(); 
+            $this->auto_enable_webhook($secret); 
         }
 
         $feed = $this->get_payment_feed($entry, $form);
@@ -585,14 +604,24 @@ EOT;
 
     }
 
-    public function auto_enable_webhook()
+    public function auto_enable_webhook($webhookSecret)
     { 
+        
         $webhookExist = false;
         $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
         $enabled = true;
-        $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
-        $secret = substr(str_shuffle($alphanumericString), 0, 20);
-        update_option('rzp_webhook_secret', $secret);
+        // $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
+        // $secret = substr(str_shuffle($alphanumericString), 0, 20);
+        // $payment_action = $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) ? $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) : self::CAPTURE;
+        // $data = [
+        //     'gf_razorpay_key' => $this->get_plugin_setting(self::GF_RAZORPAY_KEY),
+        //     'gf_razorpay_secret' => $this->get_plugin_setting(self::GF_RAZORPAY_SECRET),
+        //     'gf_razorpay_webhook_secret' => $webhookSecret,
+        //     'gf_razorpay_payment_action' => $payment_action
+        // ];
+        
+        // //$this->update_plugin_settings($data);
+        // die;
         $getWebhookFlag =  get_option('gf_webhook_enable_flag');
         $time = time();
 
@@ -638,7 +667,7 @@ EOT;
             'url'    => $webhookUrl,
             'active' => $enabled,
             'events' => $this->defaultWebhookEvents,
-            'secret' => $secret,
+            'secret' => $webhookSecret,
         ];
 
         if ($webhookExist)
@@ -726,7 +755,7 @@ EOT;
         {
             if (isset($_SERVER['HTTP_X_RAZORPAY_SIGNATURE']) === true)
             {
-               $razorpay_webhook_secret =  get_option('rzp_webhook_secret');
+               $razorpay_webhook_secret =  $this->get_plugin_setting(self::GF_RAZORPAY_WEBHOOK_SECRET);
 
                 $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
