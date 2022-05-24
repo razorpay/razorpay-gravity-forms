@@ -397,6 +397,7 @@ class GFRazorpay extends GFPaymentAddOn
     {
         $getWebhookFlag =  (int)get_option('gf_webhook_enable_flag');
         $time = time();
+
         if (!empty($getWebhookFlag))
         {
              if ($getWebhookFlag + 86400 < time())
@@ -586,67 +587,68 @@ EOT;
 
     public function auto_enable_webhook()
     { 
-            $webhookExist = false;
-            $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
-            $enabled = true;
-            $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
-            $secret = substr(str_shuffle($alphanumericString), 0, 20);
-            update_option('rzp_webhook_secret', $secret);
-            $getWebhookFlag =  get_option('gf_webhook_enable_flag');
-            $time = time();
+        $webhookExist = false;
+        $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
+        $enabled = true;
+        $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
+        $secret = substr(str_shuffle($alphanumericString), 0, 20);
+        update_option('rzp_webhook_secret', $secret);
+        $getWebhookFlag =  get_option('gf_webhook_enable_flag');
+        $time = time();
 
-            if (empty($getWebhookFlag))
-            {
-                add_option('gf_webhook_enable_flag', $time);
-            }
-            else
-            {
-                update_option('gf_webhook_enable_flag', $time);
-            }
-          
-            $skip = 0;
-            $count = 10;
-            $webhookItems= [];
+        if (empty($getWebhookFlag))
+        {
+            add_option('gf_webhook_enable_flag', $time);
+        }
+        else
+        {
+            update_option('gf_webhook_enable_flag', $time);
+        }
+        
+        $skip = 0;
+        $count = 10;
 
-            do {
-                $webhook = $this->webhookAPI("GET", "webhooks?count=".$count."&skip=".$skip);
-                $skip += 10;
-                if ($webhook['count'] > 0)
-                {
-                    foreach ($webhook['items'] as $key => $value)
-                    {  
-                        if ($value['url'] === $webhookUrl)
-                        { 
-                            foreach ($value['events'] as $evntkey => $evntval)
+        do {
+            $webhooks = $this->webhookAPI("GET", "webhooks?count=".$count."&skip=".$skip);
+            $skip += 10;
+
+            if ($webhooks['count'] > 0)
+            {
+                foreach ($webhooks['items'] as $key => $value)
+                {  
+                    if ($value['url'] === $webhookUrl)
+                    { 
+                        foreach ($value['events'] as $evntkey => $evntval)
+                        {
+                            if (($evntval == 1) and  
+                                (in_array($evntkey, $this->supportedWebhookEvents) === true))
                             {
-                                if (($evntval == 1) and  
-                                    (in_array($evntkey, $this->supportedWebhookEvents) === true))
-                                {
-                                    $this->defaultWebhookEvents[$evntkey] =  true;
-                                }
+                                $this->defaultWebhookEvents[$evntkey] =  true;
                             }
-                            $webhookExist  = true;
-                            $webhookId     = $value['id'];
-                        }    
-                    }
-                }  
-            } while ( $webhook['count'] >= 10);
-            
-            $data = [
-                'url'    => $webhookUrl,
-                'active' => $enabled,
-                'events' => $this->defaultWebhookEvents,
-                'secret' => $secret,
-            ];
-  
-            if ($webhookExist)
-            {
-                $this->webhookAPI('PUT', "webhooks/".$webhookId, $data);
-            }
-            else
-            {
-                $this->webhookAPI('POST', "webhooks/", $data);
-            }
+                        }
+                        $webhookExist  = true;
+                        $webhookId     = $value['id'];
+                        return;
+                    }    
+                }
+            }  
+        } while ( $webhooks['count'] >= 10);
+        
+        $data = [
+            'url'    => $webhookUrl,
+            'active' => $enabled,
+            'events' => $this->defaultWebhookEvents,
+            'secret' => $secret,
+        ];
+
+        if ($webhookExist)
+        {
+            $this->webhookAPI('PUT', "webhooks/".$webhookId, $data);
+        }
+        else
+        {
+            $this->webhookAPI('POST', "webhooks/", $data);
+        }
     }
 
     protected function webhookAPI($method, $url, $data = array())
