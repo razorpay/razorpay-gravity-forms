@@ -415,10 +415,10 @@ class GFRazorpay extends GFPaymentAddOn
             'gf_razorpay_webhook_secret' => $secret,
             'gf_razorpay_payment_action' => $payment_action
         ];
-        
+
         $this->update_plugin_settings($data);
-        
-        if (empty($getWebhookFlag) == true)
+
+        if (empty($getWebhookFlag) === false)
         {
              if ($getWebhookFlag + 86400 < time())
              {
@@ -428,7 +428,7 @@ class GFRazorpay extends GFPaymentAddOn
         else
         {
             update_option('gf_webhook_enable_flag', $time);
-            $this->auto_enable_webhook($secret); 
+            $this->auto_enable_webhook($secret);
         }
 
         $feed = $this->get_payment_feed($entry, $form);
@@ -590,7 +590,7 @@ EOT;
     }
 
     public function init()
-    {   
+    {
         wp_enqueue_script('jquery');
         wp_register_script('rzp', plugin_dir_url(__FILE__)  . 'assets/js/custom.js', null, null);
         wp_enqueue_script('rzp');
@@ -607,7 +607,7 @@ EOT;
     }
 
     public function auto_enable_webhook($webhookSecret)
-    { 
+    {
         $webhookExist = false;
         $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
         $enabled = true;
@@ -622,7 +622,7 @@ EOT;
         {
             update_option('gf_webhook_enable_flag', $time);
         }
-        
+
         $skip = 0;
         $count = 10;
 
@@ -633,12 +633,12 @@ EOT;
             if ($webhooks['count'] > 0)
             {
                 foreach ($webhooks['items'] as $key => $value)
-                {  
+                {
                     if ($value['url'] === $webhookUrl)
-                    { 
+                    {
                         foreach ($value['events'] as $evntkey => $evntval)
                         {
-                            if (($evntval == 1) and  
+                            if (($evntval == 1) and
                                 (in_array($evntkey, $this->supportedWebhookEvents) === true))
                             {
                                 $this->defaultWebhookEvents[$evntkey] =  true;
@@ -647,11 +647,11 @@ EOT;
                         $webhookExist  = true;
                         $webhookId     = $value['id'];
                         break;
-                    }    
+                    }
                 }
-            }  
+            }
         } while ( $webhooks['count'] >= 10);
-        
+
         $data = [
             'url'    => $webhookUrl,
             'active' => $enabled,
@@ -696,7 +696,7 @@ EOT;
         $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
         $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
-    
+
         return new Api($key, $secret);
     }
 
