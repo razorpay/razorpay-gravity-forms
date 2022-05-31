@@ -16,6 +16,7 @@ class GFRazorpay extends GFPaymentAddOn
     const GF_RAZORPAY_SECRET               = 'gf_razorpay_secret';
     const GF_RAZORPAY_PAYMENT_ACTION       = 'gf_razorpay_payment_action';
     const GF_RAZORPAY_WEBHOOK_SECRET       = 'gf_razorpay_webhook_secret';
+    const GF_RAZORPAY_WEBHOOK_ENABLED_AT   = 'gf_razorpay_webhook_enable_at';
 
     /**
      * Razorpay API attributes
@@ -172,17 +173,12 @@ class GFRazorpay extends GFPaymentAddOn
                         'label'       => esc_html__('Razorpay Key', $this->_slug),
                         'type'        => 'text',
                         'class'       => 'medium',
+                        'feedback_callback' => array($this, 'auto_enable_webhook'),
                     ),
                     array(
                         'name'        => self::GF_RAZORPAY_SECRET,
                         'label'       => esc_html__('Razorpay Secret', $this->_slug),
                         'type'        => 'text',
-                        'class'       => 'medium',
-                    ),
-                    array(
-                        'name'        => self::GF_RAZORPAY_WEBHOOK_SECRET,
-                        'label'       => esc_html__('Razorpay Webhook Secret', $this->_slug),
-                        'type'        => 'hidden',
                         'class'       => 'medium',
                     ),
                     array(
@@ -340,7 +336,7 @@ class GFRazorpay extends GFPaymentAddOn
 
         if ($status === 'complete_payment')
         {
-          do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'], $callback_action['amount'], $entry, $feed);
+            do_action('gform_razorpay_complete_payment', $callback_action['transaction_id'], $callback_action['amount'], $entry, $feed);
         }
         else
         {
@@ -376,13 +372,13 @@ class GFRazorpay extends GFPaymentAddOn
                 <?php
                 if($status == 'complete_payment')
                 {
-                ?>
-                <tr class="item"> <td> Transaction Id </td><td> # <?php echo $transaction_id; ?> </td></tr>
-                <?php
+                    ?>
+                    <tr class="item"> <td> Transaction Id </td><td> # <?php echo $transaction_id; ?> </td></tr>
+                    <?php
                 }else{
-                ?>
-                <tr class="item"> <td> Transaction Error</td><td> <?php echo $callback_action['error']; ?> </td></tr>
-                <?php
+                    ?>
+                    <tr class="item"> <td> Transaction Error</td><td> <?php echo $callback_action['error']; ?> </td></tr>
+                    <?php
                 }
                 ?>
                 <tr class="item"> <td> Transaction Date </td><td> <?php echo date("F j, Y"); ?> </td></tr>
@@ -403,32 +399,18 @@ class GFRazorpay extends GFPaymentAddOn
 
     public function generate_razorpay_form($entry, $form)
     {
-        $getWebhookFlag =  (int)get_option('gf_webhook_enable_flag');
-        $time = time();
-
-        $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
-        $secret = substr(str_shuffle($alphanumericString), 0, 20);
-        $payment_action = $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) ? $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) : self::CAPTURE;
-        $data = [
-            'gf_razorpay_key' => $this->get_plugin_setting(self::GF_RAZORPAY_KEY),
-            'gf_razorpay_secret' => $this->get_plugin_setting(self::GF_RAZORPAY_SECRET),
-            'gf_razorpay_webhook_secret' => $secret,
-            'gf_razorpay_payment_action' => $payment_action
-        ];
-
-        $this->update_plugin_settings($data);
+        $getWebhookFlag =  (int)get_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT);
 
         if (empty($getWebhookFlag) === false)
         {
-             if ($getWebhookFlag + 86400 < time())
-             {
-                 $this->auto_enable_webhook($secret);
-             }
+            if ($getWebhookFlag + 86400 < time())
+            {
+                $this->auto_enable_webhook();
+            }
         }
         else
         {
-            update_option('gf_webhook_enable_flag', $time);
-            $this->auto_enable_webhook($secret);
+            $this->auto_enable_webhook();
         }
 
         $feed = $this->get_payment_feed($entry, $form);
@@ -464,21 +446,21 @@ class GFRazorpay extends GFPaymentAddOn
         );
 
         wp_enqueue_script('razorpay_script',
-                          plugin_dir_url(__FILE__). 'script.js',
-                          array('checkout')
+            plugin_dir_url(__FILE__). 'script.js',
+            array('checkout')
         );
 
         wp_localize_script('razorpay_script',
-                           'razorpay_script_vars',
-                           array(
-                               'data' => $razorpayArgs
-                           )
+            'razorpay_script_vars',
+            array(
+                'data' => $razorpayArgs
+            )
         );
 
         wp_register_script('checkout',
-                           'https://checkout.razorpay.com/v1/checkout.js',
-                           null,
-                           null
+            'https://checkout.razorpay.com/v1/checkout.js',
+            null,
+            null
         );
 
         wp_enqueue_script('checkout');
@@ -591,14 +573,8 @@ EOT;
 
     public function init()
     {
-        wp_enqueue_script('jquery');
-        wp_register_script('rzp', plugin_dir_url(__FILE__)  . 'assets/js/custom.js', null, null);
-        wp_enqueue_script('rzp');
-
         add_filter( 'gform_notification_events', array( $this, 'notification_events' ), 10, 2 );
 
-        add_action( 'wp_ajax_get_data', 'get_data' );
-        add_action( 'wp_ajax_nopriv_get_data', 'get_data' );
         // Supports frontend feeds.
         $this->_supports_frontend_feeds = true;
 
@@ -606,67 +582,84 @@ EOT;
 
     }
 
-    public function auto_enable_webhook($webhookSecret)
+    public function auto_enable_webhook()
     {
-        $webhookExist = false;
-        $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
-        $enabled = true;
-        $getWebhookFlag =  get_option('gf_webhook_enable_flag');
-        $time = time();
-
-        if (empty($getWebhookFlag))
+        if ($_SERVER['REQUEST_METHOD'] === 'POST')
         {
-            add_option('gf_webhook_enable_flag', $time);
-        }
-        else
-        {
-            update_option('gf_webhook_enable_flag', $time);
-        }
+            $webhookExist = false;
+            $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
+            $getWebhookFlag = get_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT);
+            $webhookSecret = get_option(self::GF_RAZORPAY_WEBHOOK_SECRET);
+            $time = time();
 
-        $skip = 0;
-        $count = 10;
-
-        do {
-            $webhooks = $this->webhookAPI("GET", "webhooks?count=".$count."&skip=".$skip);
-            $skip += 10;
-
-            if ($webhooks['count'] > 0)
+            if (empty($getWebhookFlag))
             {
-                foreach ($webhooks['items'] as $key => $value)
+                add_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT, $time);
+            }
+            else
+            {
+                update_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT, $time);
+            }
+
+            $skip = 0;
+            $count = 10;
+
+            do {
+                $webhooks = $this->webhookAPI("GET", "webhooks?count=" . $count . "&skip=" . $skip);
+                $skip += 10;
+
+                if ($webhooks['count'] > 0)
                 {
-                    if ($value['url'] === $webhookUrl)
+                    foreach ($webhooks['items'] as $key => $value)
                     {
-                        foreach ($value['events'] as $evntkey => $evntval)
+                        if ($value['url'] === $webhookUrl)
                         {
-                            if (($evntval == 1) and
-                                (in_array($evntkey, $this->supportedWebhookEvents) === true))
+                            foreach ($value['events'] as $evntkey => $evntval)
                             {
-                                $this->defaultWebhookEvents[$evntkey] =  true;
+                                if (($evntval == 1) and
+                                    (in_array($evntkey, $this->supportedWebhookEvents) === true))
+                                {
+                                    $this->defaultWebhookEvents[$evntkey] = true;
+                                }
                             }
+                            $webhookExist = true;
+                            $webhookId = $value['id'];
+                            break;
                         }
-                        $webhookExist  = true;
-                        $webhookId     = $value['id'];
-                        break;
                     }
                 }
+            } while  ($webhooks['count'] >= 10);
+
+            if (empty($webhookSecret))
+            {
+                $webhookSecret = $this->createWebhookSecret();
+                delete_option(self::GF_RAZORPAY_WEBHOOK_SECRET);
+                add_option(self::GF_RAZORPAY_WEBHOOK_SECRET, $webhookSecret);
             }
-        } while ( $webhooks['count'] >= 10);
 
-        $data = [
-            'url'    => $webhookUrl,
-            'active' => $enabled,
-            'events' => $this->defaultWebhookEvents,
-            'secret' => $webhookSecret,
-        ];
+            $data = [
+                'url'    => $webhookUrl,
+                'active' => true,
+                'events' => $this->defaultWebhookEvents,
+                'secret' => $webhookSecret,
+            ];
 
-        if ($webhookExist)
-        {
-            $this->webhookAPI('PUT', "webhooks/".$webhookId, $data);
+            if ($webhookExist)
+            {
+                $this->webhookAPI('PUT', "webhooks/" . $webhookId, $data);
+            }
+            else
+            {
+                $this->webhookAPI('POST', "webhooks/", $data);
+            }
         }
-        else
-        {
-            $this->webhookAPI('POST', "webhooks/", $data);
-        }
+    }
+
+    protected function createWebhookSecret()
+    {
+        $alphanumericString = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ-=~!@#$%^&*()_+,./<>?;:[]{}|abcdefghijklmnopqrstuvwxyz';
+
+        return substr(str_shuffle($alphanumericString), 0, 20);
     }
 
     protected function webhookAPI($method, $url, $data = array())
@@ -744,7 +737,7 @@ EOT;
         {
             if (isset($_SERVER['HTTP_X_RAZORPAY_SIGNATURE']) === true)
             {
-               $razorpay_webhook_secret = $this->get_plugin_setting(self::GF_RAZORPAY_WEBHOOK_SECRET);
+                $razorpay_webhook_secret = get_option(self::GF_RAZORPAY_WEBHOOK_SECRET);
 
                 $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
 
@@ -762,8 +755,8 @@ EOT;
                 try
                 {
                     $api->utility->verifyWebhookSignature($post,
-                                                                $_SERVER['HTTP_X_RAZORPAY_SIGNATURE'],
-                                                                $razorpay_webhook_secret);
+                        $_SERVER['HTTP_X_RAZORPAY_SIGNATURE'],
+                        $razorpay_webhook_secret);
                 }
                 catch (Errors\SignatureVerificationError $e)
                 {
