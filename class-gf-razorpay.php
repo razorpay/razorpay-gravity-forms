@@ -399,11 +399,11 @@ class GFRazorpay extends GFPaymentAddOn
 
     public function generate_razorpay_form($entry, $form)
     {
-        $getWebhookFlag =  (int)get_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT);
+        $webhookEnabledAt =  (int)get_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT);
 
-        if (empty($getWebhookFlag) === false)
+        if (empty($webhookEnabledAt) === false)
         {
-            if ($getWebhookFlag + 86400 < time())
+            if ($webhookEnabledAt + 86400 < time())
             {
                 $this->auto_enable_webhook();
             }
@@ -588,11 +588,11 @@ EOT;
         {
             $webhookExist = false;
             $webhookUrl = esc_url(admin_url('admin-post.php')) . '?action=gf_razorpay_webhook';
-            $getWebhookFlag = get_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT);
+            $webhookEnabledAt = get_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT);
             $webhookSecret = get_option(self::GF_RAZORPAY_WEBHOOK_SECRET);
             $time = time();
 
-            if (empty($getWebhookFlag))
+            if (empty($webhookEnabledAt))
             {
                 add_option(self::GF_RAZORPAY_WEBHOOK_ENABLED_AT, $time);
             }
