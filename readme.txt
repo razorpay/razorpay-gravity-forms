@@ -42,6 +42,7 @@ This is compatible with version greater than 1.9.3 gravity forms.
 
 = 1.3.2 =
 * Update latest sdk 2.8.1
+* Feature Auto Enable Webhook
 
 = 1.3.1 =
 * Update latest sdk 2.8.1
