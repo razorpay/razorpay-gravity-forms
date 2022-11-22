@@ -167,7 +167,7 @@ class GFRazorpay extends GFPaymentAddOn
         return array(
             array(
                 'title'               => 'Razorpay Settings',
-                'description' => __('First <a href="https://easy.razorpay.com/onboarding?recommended_product=payment_gateway&source=gravityform" target="_blank">signup</a> for a 
+                'description'         => __('First <a href="https://easy.razorpay.com/onboarding?recommended_product=payment_gateway&source=gravityform" target="_blank">signup</a> for a 
                 Razorpay account or <a href="https://dashboard.razorpay.com/signin?screen=sign_in&source=gravityform" target="_blank">login</a> if you have an existing account.'),
                 'fields'              => array(
                     array(
