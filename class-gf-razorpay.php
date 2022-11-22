@@ -167,6 +167,8 @@ class GFRazorpay extends GFPaymentAddOn
         return array(
             array(
                 'title'               => 'Razorpay Settings',
+                'description'         => __('First <a href="https://easy.razorpay.com/onboarding?recommended_product=payment_gateway&source=gravityform" target="_blank">signup</a> for a 
+                Razorpay account or <a href="https://dashboard.razorpay.com/signin?screen=sign_in&source=gravityform" target="_blank">login</a> if you have an existing account.'),
                 'fields'              => array(
                     array(
                         'name'        => self::GF_RAZORPAY_KEY,
@@ -438,7 +440,8 @@ class GFRazorpay extends GFPaymentAddOn
             "_"             => array(
                 'integration'                => "gravityforms",
                 'integration_version'        => GF_RAZORPAY_VERSION,
-                'integration_parent_version' => GFForms::$version
+                'integration_parent_version' => GFForms::$version,
+                'integration_type'           => 'plugin',
             ),
             'order_id'      => $entry[self::RAZORPAY_ORDER_ID],
             'callback_url'  => $callbackUrl,
