@@ -2,8 +2,8 @@
 Contributors: razorpay
 Tags: razorpay, payments, india, gravityforms, ecommerce
 Requires at least: 3.9.2
-Tested up to: 5.9
-Stable tag: 1.3.2
+Tested up to: 6.1.1
+Stable tag: 1.3.3
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,11 @@ This is compatible with version greater than 1.9.3 gravity forms.
 2. Add in your Key Id and Key Secret.
 
 == Changelog ==
+
+= 1.3.3 =
+* Added easy signup link on plugin settings page
+* Added integration_type for checkout instrumentation
+* Tested up to wordpress 6.1.1
 
 = 1.3.2 =
 * Update latest sdk 2.8.1
