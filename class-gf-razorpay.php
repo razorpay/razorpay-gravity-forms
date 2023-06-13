@@ -819,7 +819,7 @@ EOT;
                 $razorpay_payment_id = $data['payload']['payment']['entity']['id'];
 
                 //check the payment status not set
-                if((empty($entry['payment_status']) === true) or
+                if ((empty($entry['payment_status']) === true) or
                     (strtolower($entry['payment_status']) !== 'paid'))
                 {
                     //check for valid amount
