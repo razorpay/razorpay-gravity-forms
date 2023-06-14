@@ -3,7 +3,7 @@ Contributors: razorpay
 Tags: razorpay, payments, india, gravityforms, ecommerce
 Requires at least: 3.9.2
 Tested up to: 6.1.1
-Stable tag: 1.3.3
+Stable tag: 1.3.4
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -39,6 +39,10 @@ This is compatible with version greater than 1.9.3 gravity forms.
 2. Add in your Key Id and Key Secret.
 
 == Changelog ==
+
+= 1.3.4 =
+* added skip on callback if status is already marked as success
+* allowing to update payment status when order.paid event is triggered to Paid
 
 = 1.3.3 =
 * Added easy signup link on plugin settings page
