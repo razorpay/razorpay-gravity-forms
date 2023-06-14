@@ -42,7 +42,7 @@ This is compatible with version greater than 1.9.3 gravity forms.
 
 = 1.3.4 =
 * added skip on callback if status is already marked as success
-* allowing to update failed payment status when order.paid event is triggered
+* allowing to update payment status when order.paid event is triggered to Paid
 
 = 1.3.3 =
 * Added easy signup link on plugin settings page
