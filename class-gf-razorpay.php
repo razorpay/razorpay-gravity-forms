@@ -260,6 +260,22 @@ class GFRazorpay extends GFPaymentAddOn
 
         $attributes = $this->get_callback_attributes();
 
+        if ((strtolower($entry['payment_status']) === 'paid') and
+            (strtolower($entry['payment_method']) === 'razorpay'))
+        {
+            $action = array(
+                'id'             => $entry['transaction_id'],
+                'type'           => 'complete_payment',
+                'transaction_id' => $entry['transaction_id'],
+                'amount'         => $entry['payment_amount'],
+                'payment_method' => 'razorpay',
+                'entry_id'       => $entry['id'],
+                'error'          => null,
+            );
+
+            return $action;
+        }
+
         $action = array(
             'id'             => $attributes[self::RAZORPAY_PAYMENT_ID],
             'type'           => 'fail_payment',
@@ -803,7 +819,8 @@ EOT;
                 $razorpay_payment_id = $data['payload']['payment']['entity']['id'];
 
                 //check the payment status not set
-                if(empty($entry['payment_status']) === true)
+                if ((empty($entry['payment_status']) === true) or
+                    (strtolower($entry['payment_status']) !== 'paid'))
                 {
                     //check for valid amount
                     $payment_amount = $data['payload']['payment']['entity']['amount'];
