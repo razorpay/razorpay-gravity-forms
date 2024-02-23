@@ -40,6 +40,7 @@ class GF_Razorpay_Bootstrap
         add_filter('gform_currencies', function (array $currencies) {
             $currencies['INR'] = array(
                 'name'               => __( 'Indian Rupee', 'gravityforms' ),
+                'code'               => 'INR',
                 'symbol_left'        => '&#8377;',
                 'symbol_right'       => '',
                 'symbol_padding'     => ' ',
