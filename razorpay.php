@@ -4,8 +4,8 @@
 Plugin Name: Razorpay for Gravity Forms
 Plugin URI: https://wordpress.org/plugins/razorpay-gravity-forms
 Description: Integrates Gravity Forms with Razorpay Payments, enabling end users to purchase goods and services through Gravity Forms.
-Version: 1.3.4
-Stable tag: 1.3.4
+Version: 1.3.5
+Stable tag: 1.3.5
 Author: Team Razorpay
 Author URI: https://razorpay.com
 Text Domain: razorpay-gravity-forms
@@ -19,7 +19,7 @@ This is the official Razorpay payment gateway plugin for Gravity Forma. Allows y
 */
 
 
-define('GF_RAZORPAY_VERSION', '1.3.4');
+define('GF_RAZORPAY_VERSION', '1.3.5');
 
 add_action('admin_post_nopriv_gf_razorpay_webhook', "gf_razorpay_webhook_init", 10);
 add_action('gform_loaded', array('GF_Razorpay_Bootstrap', 'load'), 5);
