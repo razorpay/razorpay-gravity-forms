@@ -38,6 +38,25 @@ class GF_Razorpay_Bootstrap
         GFAddOn::register('GFRazorpay');
 
         add_filter('gform_currencies', function (array $currencies) {
+
+            $supported_currencies = json_decode(file_get_contents(__DIR__ . "/supported-currencies.json"), true)['supported-currencies'];
+
+            foreach ($supported_currencies as $k => $v)
+            {
+                if (in_array($v['iso_code'], $currencies) === false)
+                {
+                    $currencies[$v['iso_code']] = array(
+                        'name'               => __( $v['currency_name'], 'gravityforms' ),
+                        'code'               => $v['iso_code'],
+                        'symbol_left'        => $v['iso_code'],
+                        'symbol_right'       => '',
+                        'symbol_padding'     => ' ',
+                        'thousand_separator' => ',',
+                        'decimal_separator'  => '.',
+                        'decimals'           => $v['exponent']
+                    );
+                }
+            }
             $currencies['INR'] = array(
                 'name'               => __( 'Indian Rupee', 'gravityforms' ),
                 'code'               => 'INR',
