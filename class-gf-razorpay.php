@@ -313,6 +313,22 @@ class GFRazorpay extends GFPaymentAddOn
             $action['error'] = null;
         }
 
+        // update order status in webhook table
+        global $wpdb;
+
+        require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
+
+        $wpdb->update(
+            $wpdb->prefix . 'rzp_gf_webhook_triggers',
+            array(
+                'rzp_update_order_cron_status' => 1
+            ),
+            array(
+                'order_id' => $entryId,
+                'rzp_order_id' => $razorpayOrderId
+            )
+        );
+
         return $action;
     }
 
@@ -429,6 +445,27 @@ class GFRazorpay extends GFPaymentAddOn
         else
         {
             $this->auto_enable_webhook();
+        }
+
+        // insert record in webhook table
+        global $wpdb;
+
+        require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
+
+        $tableName = $wpdb->prefix . 'rzp_gf_webhook_triggers';
+
+        $webhookEvents = $wpdb->get_results("SELECT * FROM $tableName WHERE order_id=" . $entry['id'] .";");
+        if (empty($webhookEvents) === true)
+        {
+            $wpdb->insert(
+                $tableName,
+                array(
+                    'order_id' => $entry['id'],
+                    'rzp_order_id'  => $entry[self::RAZORPAY_ORDER_ID],
+                    'rzp_webhook_data' => '[]',
+                    'rzp_update_order_cron_status' => 0
+                )
+            );
         }
 
         $feed = $this->get_payment_feed($entry, $form);
@@ -790,25 +827,57 @@ EOT;
                     return;
                 }
 
-                switch ($data['event'])
+                if (in_array($data['event'], [self::ORDER_PAID,'payment.authorized']) === true)
                 {
-                    case self::ORDER_PAID:
-                        return $this->order_paid($data);
+                    $webhookFilteredData = [
+                        'gravity_forms_order_id' => $data['payload']['payment']['entity']['notes']['gravity_forms_order_id'],
+                        'razorpay_payment_id' => $data['payload']['payment']['entity']['id'],
+                        'amount' => $data['payload']['payment']['entity']['amount'],
+                        'event' => $data['event']
+                    ];
 
-                    default:
-                        return;
+                    global $wpdb;
+
+                    $tableName = $wpdb->prefix . 'rzp_gf_webhook_triggers';
+
+                    $webhookEvents = $wpdb->get_results( "SELECT rzp_webhook_data FROM $tableName where order_id=" . $webhookFilteredData['gravity_forms_order_id']);
+
+                    $rzpWebhookData = (array) json_decode($webhookEvents['rzp_webhook_data']);
+
+                    $rzpWebhookData[] = $webhookFilteredData;
+
+                    $wpdb->update(
+                        $tableName,
+                        array(
+                            'rzp_webhook_data'          => json_encode($rzpWebhookData),
+                            'rzp_webhook_notified_at'   => time()
+                        ),
+                        array(
+                            'order_id'      => $webhookFilteredData['gravity_forms_order_id'],
+                            'rzp_order_id'  => $data['payload']['payment']['entity']['order_id']
+                        )
+                    );
+                }
+                else
+                {
+                    $log = array(
+                        'message' => 'webhook event is not in supported webhook events list',
+                    );
+
+                    error_log(json_encode($log));
                 }
             }
         }
     }
+
     /**
      * [order_paid Consume 'order.paid' webhook payload for order processing]
      * @param  [array] $data [webhook payload]
      * @return [type]       [description]
      */
-    private function order_paid($data)
+    public function order_paid($data)
     {
-        $entry_id = $data['payload']['payment']['entity']['notes']['gravity_forms_order_id'];
+        $entry_id = $data['gravity_forms_order_id'];
 
         if(empty($entry_id) === false)
         {
@@ -816,14 +885,14 @@ EOT;
 
             if(is_array($entry) === true)
             {
-                $razorpay_payment_id = $data['payload']['payment']['entity']['id'];
+                $razorpay_payment_id = $data['razorpay_payment_id'];
 
                 //check the payment status not set
                 if ((empty($entry['payment_status']) === true) or
                     (strtolower($entry['payment_status']) !== 'paid'))
                 {
                     //check for valid amount
-                    $payment_amount = $data['payload']['payment']['entity']['amount'];
+                    $payment_amount = $data['amount'];
 
                     $order_amount =  (int) round(rgar($entry, 'payment_amount' ) * 100);
 
