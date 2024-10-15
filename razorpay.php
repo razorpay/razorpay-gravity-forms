@@ -128,8 +128,8 @@ function rzpCronSchedules($schedules)
     if (isset($schedules["rzp_gf_webhook_cron_interval"]) === false)
     {
         $schedules["rzp_gf_webhook_cron_interval"] = array(
-            'interval' => 5 * 60,
-            'display' => __('Every 5 minutes'));
+            'interval'  => 5 * 60,
+            'display'   => __('Every 5 minutes'));
     }
 
     return $schedules;
@@ -146,6 +146,8 @@ function createRzpCron($hookName, $startTime, $recurrence)
 function execRzpWebhookEvents()
 {
     global $wpdb;
+
+    require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
 
     $tableName = $wpdb->prefix . 'rzp_gf_webhook_triggers';
 
@@ -169,8 +171,8 @@ function execRzpWebhookEvents()
                             'rzp_update_order_cron_status' => 2
                         ),
                         array(
-                            'order_id' => $row->order_id,
-                            'rzp_order_id' => $row->rzp_order_id
+                            'order_id'      => $row->order_id,
+                            'rzp_order_id'  => $row->rzp_order_id
                         )
                     );
                     return;
