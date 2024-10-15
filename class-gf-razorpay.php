@@ -860,7 +860,7 @@ EOT;
                 else
                 {
                     $log = array(
-                        'message' => "webhook event ". $data['event'] . " is not in supported.",
+                        'message' => "webhook event ". $data['event'] . " is not supported.",
                     );
 
                     error_log(json_encode($log));
