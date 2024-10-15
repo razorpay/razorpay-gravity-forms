@@ -324,8 +324,8 @@ class GFRazorpay extends GFPaymentAddOn
                 'rzp_update_order_cron_status' => 1
             ),
             array(
-                'order_id' => $entryId,
-                'rzp_order_id' => $razorpayOrderId
+                'order_id'      => $entryId,
+                'rzp_order_id'  => $razorpayOrderId
             )
         );
 
@@ -453,17 +453,16 @@ class GFRazorpay extends GFPaymentAddOn
         require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
 
         $tableName = $wpdb->prefix . 'rzp_gf_webhook_triggers';
-
-        $webhookEvents = $wpdb->get_results("SELECT * FROM $tableName WHERE order_id=" . $entry['id'] .";");
+        $webhookEvents = $wpdb->get_results("SELECT * FROM $tableName WHERE order_id=" . $entry['id'] . ";");
         if (empty($webhookEvents) === true)
         {
             $wpdb->insert(
                 $tableName,
                 array(
-                    'order_id' => $entry['id'],
-                    'rzp_order_id'  => $entry[self::RAZORPAY_ORDER_ID],
-                    'rzp_webhook_data' => '[]',
-                    'rzp_update_order_cron_status' => 0
+                    'order_id'                      => $entry['id'],
+                    'rzp_order_id'                  => $entry[self::RAZORPAY_ORDER_ID],
+                    'rzp_webhook_data'              => '[]',
+                    'rzp_update_order_cron_status'  => 0
                 )
             );
         }
@@ -827,20 +826,20 @@ EOT;
                     return;
                 }
 
-                if (in_array($data['event'], [self::ORDER_PAID,'payment.authorized']) === true)
+                if (in_array($data['event'], $supportedWebhookEvents) === true)
                 {
                     $webhookFilteredData = [
-                        'gravity_forms_order_id' => $data['payload']['payment']['entity']['notes']['gravity_forms_order_id'],
-                        'razorpay_payment_id' => $data['payload']['payment']['entity']['id'],
-                        'amount' => $data['payload']['payment']['entity']['amount'],
-                        'event' => $data['event']
+                        'gravity_forms_order_id'    => $data['payload']['payment']['entity']['notes']['gravity_forms_order_id'],
+                        'razorpay_payment_id'       => $data['payload']['payment']['entity']['id'],
+                        'amount'                    => $data['payload']['payment']['entity']['amount'],
+                        'event'                     => $data['event']
                     ];
 
                     global $wpdb;
 
                     $tableName = $wpdb->prefix . 'rzp_gf_webhook_triggers';
 
-                    $webhookEvents = $wpdb->get_results( "SELECT rzp_webhook_data FROM $tableName where order_id=" . $webhookFilteredData['gravity_forms_order_id']);
+                    $webhookEvents = $wpdb->get_results("SELECT rzp_webhook_data FROM $tableName where order_id=" . $webhookFilteredData['gravity_forms_order_id'] . ";");
 
                     $rzpWebhookData = (array) json_decode($webhookEvents['rzp_webhook_data']);
 
@@ -861,7 +860,7 @@ EOT;
                 else
                 {
                     $log = array(
-                        'message' => 'webhook event is not in supported webhook events list',
+                        'message' => "webhook event ". $data['event'] . " is not in supported.",
                     );
 
                     error_log(json_encode($log));
