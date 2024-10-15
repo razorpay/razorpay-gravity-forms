@@ -826,7 +826,7 @@ EOT;
                     return;
                 }
 
-                if (in_array($data['event'], $supportedWebhookEvents) === true)
+                if (in_array($data['event'], $this->supportedWebhookEvents) === true)
                 {
                     $webhookFilteredData = [
                         'gravity_forms_order_id'    => $data['payload']['payment']['entity']['notes']['gravity_forms_order_id'],
