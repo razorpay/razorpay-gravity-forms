@@ -149,9 +149,10 @@ function execRzpWebhookEvents()
 
     require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
 
+    $rzp_order_processed_by_webhook = 2;
     $tableName = $wpdb->prefix . 'rzp_gf_webhook_triggers';
 
-    $webhookEvents = $wpdb->get_results("SELECT order_id, rzp_order_id, rzp_webhook_data FROM $tableName WHERE rzp_webhook_notified_at < " . (string)(time() - 120) ." AND rzp_update_order_cron_status=0;");
+    $webhookEvents = $wpdb->get_results("SELECT order_id, rzp_order_id, rzp_webhook_data FROM $tableName WHERE rzp_webhook_notified_at < " . (string)(time() - 300) ." AND rzp_update_order_cron_status=0;");
 
     foreach ($webhookEvents as $row)
     {
@@ -168,7 +169,7 @@ function execRzpWebhookEvents()
                     $wpdb->update(
                         $tableName,
                         array(
-                            'rzp_update_order_cron_status' => 2
+                            'rzp_update_order_cron_status' => $rzp_order_processed_by_webhook
                         ),
                         array(
                             'order_id'      => $row->order_id,

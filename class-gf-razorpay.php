@@ -40,6 +40,12 @@ class GFRazorpay extends GFPaymentAddOn
     const CUSTOMER_FIELDS_EMAIL            = 'email';
     const CUSTOMER_FIELDS_CONTACT          = 'contact';
 
+    /**
+     * Order status for rzp_gf_webhook_triggers table
+     */
+    const RZP_ORDER_CREATED = 0;
+    const RZP_ORDER_PROCESSED_BY_CALLBACK = 1;
+
     // TODO: Check if all the variables below are needed
 
     /**
@@ -321,7 +327,7 @@ class GFRazorpay extends GFPaymentAddOn
         $wpdb->update(
             $wpdb->prefix . 'rzp_gf_webhook_triggers',
             array(
-                'rzp_update_order_cron_status' => 1
+                'rzp_update_order_cron_status' => self::RZP_ORDER_PROCESSED_BY_CALLBACK
             ),
             array(
                 'order_id'      => $entryId,
@@ -462,7 +468,7 @@ class GFRazorpay extends GFPaymentAddOn
                     'order_id'                      => $entry['id'],
                     'rzp_order_id'                  => $entry[self::RAZORPAY_ORDER_ID],
                     'rzp_webhook_data'              => '[]',
-                    'rzp_update_order_cron_status'  => 0
+                    'rzp_update_order_cron_status'  => self::RZP_ORDER_CREATED
                 )
             );
         }
@@ -836,6 +842,8 @@ EOT;
                     ];
 
                     global $wpdb;
+
+                    require_once(ABSPATH . '/wp-admin/includes/upgrade.php');
 
                     $tableName = $wpdb->prefix . 'rzp_gf_webhook_triggers';
 
