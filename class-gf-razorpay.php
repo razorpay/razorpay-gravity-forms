@@ -163,7 +163,7 @@ class GFRazorpay extends GFPaymentAddOn
     public function init_frontend()
     {
         parent::init_frontend();
-        add_filter('gform_confirmation', array($this, 'generate_razorpay_order'), 10, 4);
+        add_action('gform_after_submission', array($this, 'generate_razorpay_order'), 10, 2);
     }
 
     public function plugin_settings_fields()
@@ -559,7 +559,7 @@ EOT;
         return true;
     }
 
-    public function generate_razorpay_order($confirmation, $form, $entry)
+    public function generate_razorpay_order($entry, $form)
     {
         $feed            = $this->get_payment_feed( $entry );
         $submission_data = $this->get_submission_data( $feed, $form, $entry );
