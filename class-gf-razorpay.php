@@ -605,8 +605,10 @@ EOT;
 
             GFAPI::update_entry($entry);
 
+            $httpSecure = is_ssl() ? true : false;
+
             setcookie(self::RAZORPAY_ORDER_ID, $entry[self::RAZORPAY_ORDER_ID],
-                time() + self::COOKIE_DURATION, COOKIEPATH, COOKIE_DOMAIN, false, true);
+                time() + self::COOKIE_DURATION, COOKIEPATH, COOKIE_DOMAIN, $httpSecure, true);
 
             echo $this->generate_razorpay_form($entry, $form);
         }
