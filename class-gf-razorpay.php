@@ -389,12 +389,15 @@ class GFRazorpay extends GFPaymentAddOn
             require_once( GFCommon::get_base_path() . '/form_display.php' );
         }
 
-        $form = GFFormDisplay::update_confirmation( $form, $entry );
+        $form = GFFormDisplay::update_confirmation($form, $entry);
 
-        if ( rgar( $form['confirmation'], 'type' ) == 'message' ) {
-            $confirmation = GFFormDisplay::get_confirmation_message( $form['confirmation'], $form, $entry, [] );
-        } else {
-            $confirmation = array( 'redirect' => GFFormDisplay::get_confirmation_url( $form['confirmation'], $form, $entry ) );
+        if (rgar($form['confirmation'], 'type') == 'message')
+        {
+            $confirmation = GFFormDisplay::get_confirmation_message($form['confirmation'], $form, $entry, []);
+        }
+        else
+        {
+            $confirmation = array('redirect' => GFFormDisplay::get_confirmation_url($form['confirmation'], $form, $entry));
         }
 
         if ( is_array( $confirmation ) && isset( $confirmation['redirect'] ) ) {
