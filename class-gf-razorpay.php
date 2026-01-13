@@ -588,9 +588,9 @@ EOT;
             $entry['payment_amount'] = $paymentAmount;
         }
 
-        $key = $this->get_plugin_setting(self::GF_RAZORPAY_KEY);
-
-        $secret = $this->get_plugin_setting(self::GF_RAZORPAY_SECRET);
+        $key = apply_filters( 'gfrazorpay_on_payment_razorpay_key', $this->get_plugin_setting(self::GF_RAZORPAY_KEY), $entry, $form );
+        
+		$secret = apply_filters( 'gfrazorpay_on_payment_razorpay_secret', $this->get_plugin_setting(self::GF_RAZORPAY_SECRET), $entry, $form );
 
         $payment_action = $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) ? $this->get_plugin_setting(self::GF_RAZORPAY_PAYMENT_ACTION) : self::CAPTURE;
 
